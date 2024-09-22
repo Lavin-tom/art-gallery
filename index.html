@@ -35,6 +35,7 @@
     let hitTestSource = null;
     let hitTestSourceRequested = false;
     const logElement = document.getElementById('log');
+    let artworkReady = false;
 
     function log(message) {
       logElement.innerHTML += `<div>${message}</div>`;
@@ -63,22 +64,28 @@
 
       // Load artwork texture (image)
       const artworkTexture = new THREE.TextureLoader().load(
-        'https://images.unsplash.com/photo-1726510114046-b7938cdc1bd1?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-        () => log('Artwork loaded successfully!'),
+        'assets/ar7.jpg',  // Relative path to your local image
+        () => {
+          log('Artwork loaded successfully!');
+          artworkReady = true; // Set the flag to true when loaded
+        },
         (error) => log('Error loading artwork: ' + error)
       );
 
       const artworkMaterial = new THREE.MeshBasicMaterial({ map: artworkTexture });
-      const artworkPlane = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), artworkMaterial);
+      const artworkPlane = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1.5), artworkMaterial);
       artworkPlane.rotation.x = -Math.PI / 2;
 
       // Place artwork on detected surface
       function placeArtwork() {
-        if (reticle.visible) {
+        if (reticle.visible && artworkReady) {
           const artworkClone = artworkPlane.clone();
           artworkClone.position.setFromMatrixPosition(reticle.matrix);
+          artworkClone.lookAt(camera.position); // Make the artwork face the camera
           scene.add(artworkClone);
           log('Artwork placed!');
+        } else {
+          log('Reticle not visible or artwork not ready, cannot place artwork.');
         }
       }
 
