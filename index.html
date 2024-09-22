@@ -76,14 +76,9 @@
 
       // AR button to enter AR mode
       const arButton = document.getElementById('arButton');
-      arButton.innerText = 'Enter AR';
-      arButton.onclick = () => {
-        if (navigator.xr) {
-          navigator.xr.requestSession('immersive-ar', {
-            requiredFeatures: ['hit-test']
-          }).then(onSessionStart);
-        }
-      };
+      ARButton.createButton(renderer).then((button) => {
+        document.body.appendChild(button);
+      });
 
       // Handle window resize
       window.addEventListener('resize', () => {
