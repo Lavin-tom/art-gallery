@@ -55,8 +55,8 @@
 
       // Reticle (for surface detection)
       reticle = new THREE.Mesh(
-        new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2),
-        new THREE.MeshBasicMaterial({ color: 0x00ff00 })
+        new THREE.RingGeometry(0.2, 0.3, 32).rotateX(-Math.PI / 2),
+        new THREE.MeshBasicMaterial({ color: 0x00ff00, opacity: 0.5, transparent: true })
       );
       reticle.matrixAutoUpdate = false;
       reticle.visible = false;
@@ -132,15 +132,18 @@
 
           if (hitTestSource) {
             const hitTestResults = frame.getHitTestResults(hitTestSource);
-
             if (hitTestResults.length > 0) {
               const hit = hitTestResults[0];
               const pose = hit.getPose(referenceSpace);
               reticle.visible = true;
               reticle.matrix.fromArray(pose.transform.matrix);
+              log('Reticle is visible and positioned.');
             } else {
               reticle.visible = false;
+              log('No hit detected, reticle is hidden.');
             }
+          } else {
+            log('Hit test source is not available.');
           }
         }
 
@@ -150,6 +153,7 @@
 
     // Initialize app
     init();
+    renderer.xr.addEventListener('sessionstart', onSessionStart);
   </script>
 </body>
 </html>
