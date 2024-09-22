@@ -38,22 +38,20 @@
     let artworkReady = false;
 
     function log(message) {
-      logElement.innerHTML += `<div>${message}</div>`;
-      logElement.scrollTop = logElement.scrollHeight; // Auto-scroll to bottom
+      const logEntry = `<div>${message}</div>`;
+      logElement.innerHTML = logEntry + logElement.innerHTML; // Insert new log at the top
+      logElement.scrollTop = 0; // Scroll to the top
     }
 
     function init() {
-      // Create scene and camera
       scene = new THREE.Scene();
       camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
 
-      // Renderer
       renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.xr.enabled = true;
       document.body.appendChild(renderer.domElement);
 
-      // Reticle (for surface detection)
       reticle = new THREE.Mesh(
         new THREE.RingGeometry(0.2, 0.3, 32).rotateX(-Math.PI / 2),
         new THREE.MeshBasicMaterial({ color: 0x00ff00, opacity: 0.5, transparent: true })
@@ -62,12 +60,11 @@
       reticle.visible = false;
       scene.add(reticle);
 
-      // Load artwork texture (image)
       const artworkTexture = new THREE.TextureLoader().load(
-        'assets/ar7.jpg',  // Relative path to your local image
+        'assets/ar7.jpg',
         () => {
           log('Artwork loaded successfully!');
-          artworkReady = true; // Set the flag to true when loaded
+          artworkReady = true;
         },
         (error) => log('Error loading artwork: ' + error)
       );
@@ -76,12 +73,11 @@
       const artworkPlane = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1.5), artworkMaterial);
       artworkPlane.rotation.x = -Math.PI / 2;
 
-      // Place artwork on detected surface
       function placeArtwork() {
         if (reticle.visible && artworkReady) {
           const artworkClone = artworkPlane.clone();
           artworkClone.position.setFromMatrixPosition(reticle.matrix);
-          artworkClone.lookAt(camera.position); // Make the artwork face the camera
+          artworkClone.lookAt(camera.position);
           scene.add(artworkClone);
           log('Artwork placed!');
         } else {
@@ -89,15 +85,12 @@
         }
       }
 
-      // XR Controller
       controller = renderer.xr.getController(0);
       controller.addEventListener('select', placeArtwork);
       scene.add(controller);
 
-      // AR button to enter AR mode
       document.body.appendChild(ARButton.createButton(renderer));
 
-      // Handle window resize
       window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
@@ -115,7 +108,6 @@
 
       renderer.xr.setSession(session);
 
-      // XR Frame rendering loop
       renderer.setAnimationLoop((timestamp, frame) => {
         if (frame) {
           const referenceSpace = renderer.xr.getReferenceSpace();
@@ -151,7 +143,6 @@
       });
     }
 
-    // Initialize app
     init();
     renderer.xr.addEventListener('sessionstart', onSessionStart);
   </script>
