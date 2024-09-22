@@ -9,128 +9,113 @@
       margin: 0;
       overflow: hidden;
     }
-    #arButton {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      padding: 10px;
-      background-color: #0288d1;
-      color: white;
-      border: none;
-      font-size: 18px;
-      cursor: pointer;
-      z-index: 10;
-    }
   </style>
 </head>
 <body>
-  <button id="arButton"></button>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://threejs.org/examples/jsm/webxr/ARButton.js"></script>
-<script type="module">
-  import { ARButton } from 'https://threejs.org/examples/jsm/webxr/ARButton.js';
-  
-  let scene, camera, renderer, controller, reticle;
-  let hitTestSource = null;
-  let hitTestSourceRequested = false;
+  <script type="module">
+    import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.min.js';
+    import { ARButton } from './ARButton.js';
 
-  function init() {
-    // Create scene and camera
-    scene = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
+    let scene, camera, renderer, controller, reticle;
+    let hitTestSource = null;
+    let hitTestSourceRequested = false;
 
-    // Renderer
-    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.xr.enabled = true;
-    document.body.appendChild(renderer.domElement);
+    function init() {
+      // Create scene and camera
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
 
-    // Reticle (for surface detection)
-    reticle = new THREE.Mesh(
-      new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2),
-      new THREE.MeshBasicMaterial({ color: 0x00ff00 })
-    );
-    reticle.matrixAutoUpdate = false;
-    reticle.visible = false;
-    scene.add(reticle);
+      // Renderer
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.xr.enabled = true;
+      document.body.appendChild(renderer.domElement);
 
-    // Load artwork texture (image)
-    const artworkTexture = new THREE.TextureLoader().load('https://images.unsplash.com/photo-1726510114046-b7938cdc1bd1?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
-    const artworkMaterial = new THREE.MeshBasicMaterial({ map: artworkTexture });
+      // Reticle (for surface detection)
+      reticle = new THREE.Mesh(
+        new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2),
+        new THREE.MeshBasicMaterial({ color: 0x00ff00 })
+      );
+      reticle.matrixAutoUpdate = false;
+      reticle.visible = false;
+      scene.add(reticle);
 
-    // Artwork (plane)
-    const artworkPlane = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), artworkMaterial);
-    artworkPlane.rotation.x = -Math.PI / 2;
+      // Load artwork texture (image)
+      const artworkTexture = new THREE.TextureLoader().load('https://images.unsplash.com/photo-1726510114046-b7938cdc1bd1?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
+      const artworkMaterial = new THREE.MeshBasicMaterial({ map: artworkTexture });
 
-    // Place artwork on detected surface
-    function placeArtwork() {
-      if (reticle.visible) {
-        const artworkClone = artworkPlane.clone();
-        artworkClone.position.setFromMatrixPosition(reticle.matrix);
-        scene.add(artworkClone);
+      // Artwork (plane)
+      const artworkPlane = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), artworkMaterial);
+      artworkPlane.rotation.x = -Math.PI / 2;
+
+      // Place artwork on detected surface
+      function placeArtwork() {
+        if (reticle.visible) {
+          const artworkClone = artworkPlane.clone();
+          artworkClone.position.setFromMatrixPosition(reticle.matrix);
+          scene.add(artworkClone);
+        }
       }
+
+      // XR Controller
+      controller = renderer.xr.getController(0);
+      controller.addEventListener('select', placeArtwork);
+      scene.add(controller);
+
+      // AR button to enter AR mode
+      document.body.appendChild(ARButton.createButton(renderer));
+
+      // Handle window resize
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
     }
 
-    // XR Controller
-    controller = renderer.xr.getController(0);
-    controller.addEventListener('select', placeArtwork);
-    scene.add(controller);
+    function onSessionStart(session) {
+      session.addEventListener('end', () => {
+        hitTestSourceRequested = false;
+        hitTestSource = null;
+      });
 
-    // AR button to enter AR mode
-    document.body.appendChild(ARButton.createButton(renderer));
+      renderer.xr.setSession(session);
 
-    // Handle window resize
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    });
-  }
+      // XR Frame rendering loop
+      renderer.setAnimationLoop((timestamp, frame) => {
+        if (frame) {
+          const referenceSpace = renderer.xr.getReferenceSpace();
 
-  function onSessionStart(session) {
-    session.addEventListener('end', () => {
-      hitTestSourceRequested = false;
-      hitTestSource = null;
-    });
-
-    renderer.xr.setSession(session);
-
-    // XR Frame rendering loop
-    renderer.setAnimationLoop((timestamp, frame) => {
-      if (frame) {
-        const referenceSpace = renderer.xr.getReferenceSpace();
-
-        if (!hitTestSourceRequested) {
-          session.requestReferenceSpace('viewer').then((referenceSpace) => {
-            session.requestHitTestSource({ space: referenceSpace }).then((source) => {
-              hitTestSource = source;
+          if (!hitTestSourceRequested) {
+            session.requestReferenceSpace('viewer').then((referenceSpace) => {
+              session.requestHitTestSource({ space: referenceSpace }).then((source) => {
+                hitTestSource = source;
+              });
             });
-          });
-          hitTestSourceRequested = true;
-        }
+            hitTestSourceRequested = true;
+          }
 
-        if (hitTestSource) {
-          const hitTestResults = frame.getHitTestResults(hitTestSource);
+          if (hitTestSource) {
+            const hitTestResults = frame.getHitTestResults(hitTestSource);
 
-          if (hitTestResults.length > 0) {
-            const hit = hitTestResults[0];
-            const pose = hit.getPose(referenceSpace);
+            if (hitTestResults.length > 0) {
+              const hit = hitTestResults[0];
+              const pose = hit.getPose(referenceSpace);
 
-            reticle.visible = true;
-            reticle.matrix.fromArray(pose.transform.matrix);
-          } else {
-            reticle.visible = false;
+              reticle.visible = true;
+              reticle.matrix.fromArray(pose.transform.matrix);
+            } else {
+              reticle.visible = false;
+            }
           }
         }
-      }
 
-      renderer.render(scene, camera);
-    });
-  }
+        renderer.render(scene, camera);
+      });
+    }
 
-  // Initialize app
-  init();
-</script>
-
+    // Initialize app
+    init();
+  </script>
 </body>
 </html>
