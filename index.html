@@ -12,16 +12,17 @@
     }
     #log {
       position: absolute;
-      top: 10px;
+      bottom: 10px;
       left: 10px;
-      background: rgba(0, 0, 0, 0.7);
+      background: rgba(0, 0, 0, 0.5); /* Make it semi-transparent */
       color: white;
-      padding: 10px;
+      padding: 5px;
       border-radius: 5px;
-      font-size: 14px;
-      max-width: 300px;
+      font-size: 12px;
+      max-width: 200px;
+      max-height: 100px;
       overflow-y: auto;
-      max-height: 90vh;
+      z-index: 1; /* Lower z-index to ensure it's not covering the entire window */
     }
   </style>
 </head>
@@ -38,7 +39,14 @@
     const logElement = document.getElementById('log');
 
     function log(message) {
-      logElement.textContent = message;
+      const logEntry = `<div>${message}</div>`;
+      logElement.innerHTML = logEntry + logElement.innerHTML;
+
+      // Limit log to the last 10 messages
+      const logMessages = logElement.querySelectorAll('div');
+      if (logMessages.length > 10) {
+        logMessages[logMessages.length - 1].remove();
+      }
     }
 
     function init() {
