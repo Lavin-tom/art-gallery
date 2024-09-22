@@ -8,10 +8,25 @@
     body {
       margin: 0;
       overflow: hidden;
+      font-family: Arial, sans-serif;
+    }
+    #log {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 10px;
+      border-radius: 5px;
+      font-size: 14px;
+      max-width: 300px;
+      overflow-y: auto;
+      max-height: 90vh;
     }
   </style>
 </head>
 <body>
+  <div id="log">Initializing AR...</div>
   <script type="module">
     import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.min.js';
     import { ARButton } from 'https://cdn.rawgit.com/mrdoob/three.js/r128/examples/jsm/webxr/ARButton.js';
@@ -19,6 +34,12 @@
     let scene, camera, renderer, controller, reticle;
     let hitTestSource = null;
     let hitTestSourceRequested = false;
+    const logElement = document.getElementById('log');
+
+    function log(message) {
+      logElement.innerHTML += `<div>${message}</div>`;
+      logElement.scrollTop = logElement.scrollHeight; // Auto-scroll to bottom
+    }
 
     function init() {
       // Create scene and camera
@@ -41,10 +62,13 @@
       scene.add(reticle);
 
       // Load artwork texture (image)
-      const artworkTexture = new THREE.TextureLoader().load('https://images.unsplash.com/photo-1726510114046-b7938cdc1bd1?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
-      const artworkMaterial = new THREE.MeshBasicMaterial({ map: artworkTexture });
+      const artworkTexture = new THREE.TextureLoader().load(
+        'https://images.unsplash.com/photo-1726510114046-b7938cdc1bd1?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+        () => log('Artwork loaded successfully!'),
+        (error) => log('Error loading artwork: ' + error)
+      );
 
-      // Artwork (plane)
+      const artworkMaterial = new THREE.MeshBasicMaterial({ map: artworkTexture });
       const artworkPlane = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), artworkMaterial);
       artworkPlane.rotation.x = -Math.PI / 2;
 
@@ -54,6 +78,7 @@
           const artworkClone = artworkPlane.clone();
           artworkClone.position.setFromMatrixPosition(reticle.matrix);
           scene.add(artworkClone);
+          log('Artwork placed!');
         }
       }
 
@@ -74,7 +99,9 @@
     }
 
     function onSessionStart(session) {
+      log('AR Session started.');
       session.addEventListener('end', () => {
+        log('AR Session ended.');
         hitTestSourceRequested = false;
         hitTestSource = null;
       });
@@ -90,6 +117,7 @@
             session.requestReferenceSpace('viewer').then((referenceSpace) => {
               session.requestHitTestSource({ space: referenceSpace }).then((source) => {
                 hitTestSource = source;
+                log('Hit test source created.');
               });
             });
             hitTestSourceRequested = true;
@@ -101,7 +129,6 @@
             if (hitTestResults.length > 0) {
               const hit = hitTestResults[0];
               const pose = hit.getPose(referenceSpace);
-
               reticle.visible = true;
               reticle.matrix.fromArray(pose.transform.matrix);
             } else {
