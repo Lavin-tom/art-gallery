@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AR Art Gallery</title>
+  <title>AR Image Placement</title>
   <style>
     body {
       margin: 0;
@@ -34,13 +34,11 @@
     let scene, camera, renderer, controller, reticle;
     let hitTestSource = null;
     let hitTestSourceRequested = false;
-    const logElement = document.getElementById('log');
     let artworkReady = false;
+    const logElement = document.getElementById('log');
 
     function log(message) {
-      const logEntry = `<div>${message}</div>`;
-      logElement.innerHTML = logEntry + logElement.innerHTML;
-      logElement.scrollTop = 0;
+      logElement.textContent = message;
     }
 
     function init() {
@@ -52,20 +50,22 @@
       renderer.xr.enabled = true;
       document.body.appendChild(renderer.domElement);
 
-      // Add ambient light
-      const light = new THREE.AmbientLight(0xffffff, 1); // Soft white light
+      // Ambient light for better scene lighting
+      const light = new THREE.AmbientLight(0xffffff, 1); 
       scene.add(light);
 
+      // Reticle to show where to place image
       reticle = new THREE.Mesh(
-        new THREE.RingGeometry(0.2, 0.3, 32).rotateX(-Math.PI / 2),
+        new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2),
         new THREE.MeshBasicMaterial({ color: 0x00ff00, opacity: 0.5, transparent: true })
       );
       reticle.matrixAutoUpdate = false;
       reticle.visible = false;
       scene.add(reticle);
 
+      // Load image as texture for artwork
       const artworkTexture = new THREE.TextureLoader().load(
-        'assets/ar7.jpg',
+        'assets/ar7.jpg',  // Replace with your image path
         () => {
           log('Artwork loaded successfully!');
           artworkReady = true;
@@ -73,28 +73,33 @@
         (error) => log('Error loading artwork: ' + error)
       );
 
+      // Create the plane geometry for artwork placement
       const artworkMaterial = new THREE.MeshBasicMaterial({ map: artworkTexture });
-      const artworkPlane = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1.5), artworkMaterial);
+      const artworkPlane = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1), artworkMaterial);
       artworkPlane.rotation.x = -Math.PI / 2;
 
+      // Function to place artwork on detected plane
       function placeArtwork() {
         if (reticle.visible && artworkReady) {
           const artworkClone = artworkPlane.clone();
           artworkClone.position.setFromMatrixPosition(reticle.matrix);
-          artworkClone.lookAt(camera.position);
+          artworkClone.lookAt(camera.position); // Orient the image towards the user
           scene.add(artworkClone);
-          log('Artwork placed!');
+          log('Artwork placed on plane!');
         } else {
-          log('Reticle not visible or artwork not ready, cannot place artwork.');
+          log('Reticle not visible or artwork not ready.');
         }
       }
 
+      // XR controller to handle user interactions (tap to place image)
       controller = renderer.xr.getController(0);
       controller.addEventListener('select', placeArtwork);
       scene.add(controller);
 
-      document.body.appendChild(ARButton.createButton(renderer));
+      // Add AR button for starting the session
+      document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] }));
 
+      // Handle window resizing
       window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
@@ -102,6 +107,7 @@
       });
     }
 
+    // Session handling and hit-test
     function onSessionStart(session) {
       log('AR Session started.');
       session.addEventListener('end', () => {
@@ -112,6 +118,7 @@
 
       renderer.xr.setSession(session);
 
+      // Handle hit test detection and reticle placement
       renderer.setAnimationLoop((timestamp, frame) => {
         if (frame) {
           const referenceSpace = renderer.xr.getReferenceSpace();
@@ -132,21 +139,18 @@
               const hit = hitTestResults[0];
               const pose = hit.getPose(referenceSpace);
               reticle.visible = true;
-              reticle.matrix.fromArray(pose.transform.matrix);
-              log('Reticle is visible and positioned.');
+              reticle.matrix.fromArray(pose.transform.matrix); // Position reticle on detected plane
             } else {
-              reticle.visible = false;
-              log('No hit detected, reticle is hidden.');
+              reticle.visible = false; // Hide reticle if no plane detected
             }
-          } else {
-            log('Hit test source is not available.');
           }
         }
 
-        renderer.render(scene, camera);
+        renderer.render(scene, camera); // Render the scene with updated reticle position
       });
     }
 
+    // Initialize the AR experience
     init();
     renderer.xr.addEventListener('sessionstart', onSessionStart);
   </script>
