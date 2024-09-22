@@ -39,8 +39,8 @@
 
     function log(message) {
       const logEntry = `<div>${message}</div>`;
-      logElement.innerHTML = logEntry + logElement.innerHTML; // Insert new log at the top
-      logElement.scrollTop = 0; // Scroll to the top
+      logElement.innerHTML = logEntry + logElement.innerHTML;
+      logElement.scrollTop = 0;
     }
 
     function init() {
@@ -51,6 +51,10 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.xr.enabled = true;
       document.body.appendChild(renderer.domElement);
+
+      // Add ambient light
+      const light = new THREE.AmbientLight(0xffffff, 1); // Soft white light
+      scene.add(light);
 
       reticle = new THREE.Mesh(
         new THREE.RingGeometry(0.2, 0.3, 32).rotateX(-Math.PI / 2),
