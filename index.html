@@ -1,108 +1,124 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AR Image Placement</title>
-  <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-      font-family: Arial, sans-serif;
-    }
-  </style>
-</head>
-<body>
-  <script type="module">
-    import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.min.js';
-    import { ARButton } from 'https://cdn.rawgit.com/mrdoob/three.js/r128/examples/jsm/webxr/ARButton.js';
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Markerless AR with Image</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@webxr-input-profiles/motion-controllers"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/webxr/ARButton.js"></script>
+  </head>
+  <body>
+    <script>
+      let camera, scene, renderer;
+      let reticle;
+      let hitTestSource = null;
+      let hitTestSourceRequested = false;
+      let controller;
+      let imageMaterial;
+      let imagePlane;
 
-    let scene, camera, renderer, hitTestSource = null, hitTestSourceRequested = false;
-    let artworkReady = false;
-    let imagePlaced = false;
+      init();
+      animate();
 
-    function init() {
-      scene = new THREE.Scene();
-      camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
+      function init() {
+        scene = new THREE.Scene();
 
-      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.xr.enabled = true;
-      document.body.appendChild(renderer.domElement);
+        // Create a camera
+        camera = new THREE.PerspectiveCamera(
+          70,
+          window.innerWidth / window.innerHeight,
+          0.1,
+          1000
+        );
 
-      // Add ambient light
-      const light = new THREE.AmbientLight(0xffffff, 1);
-      scene.add(light);
+        // Create a WebGLRenderer for AR
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.xr.enabled = true;
+        document.body.appendChild(renderer.domElement);
 
-      // Load image texture for artwork
-      const artworkTexture = new THREE.TextureLoader().load(
-        'assets/ar7.jpg',
-        () => {
-          artworkReady = true;
-        }
-      );
+        // Add ARButton to enable AR functionality
+        document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] }));
 
-      const artworkMaterial = new THREE.MeshBasicMaterial({ map: artworkTexture });
-      const artworkPlane = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1), artworkMaterial);
+        // Reticle for surface placement
+        const ringGeometry = new THREE.RingGeometry(0.1, 0.15, 32).rotateX(-Math.PI / 2);
+        const ringMaterial = new THREE.MeshBasicMaterial({
+          color: 0xffffff,
+          side: THREE.DoubleSide,
+        });
+        reticle = new THREE.Mesh(ringGeometry, ringMaterial);
+        reticle.matrixAutoUpdate = false;
+        reticle.visible = false;
+        scene.add(reticle);
 
-      // Function to place artwork in AR space at the hit test pose
-      function placeArtworkAtPose(pose) {
-        if (artworkReady && !imagePlaced) {
-          artworkPlane.position.setFromMatrixPosition(pose.transform.matrix);
-          artworkPlane.quaternion.setFromRotationMatrix(pose.transform.matrix);
-          scene.add(artworkPlane);
-          imagePlaced = true; 
+        // Create a plane to display the image
+        const textureLoader = new THREE.TextureLoader();
+        textureLoader.load('assets/art7.jpg', (texture) => {
+          imageMaterial = new THREE.MeshBasicMaterial({ map: texture });
+          const planeGeometry = new THREE.PlaneGeometry(0.5, 0.5); 
+          imagePlane = new THREE.Mesh(planeGeometry, imageMaterial);
+          imagePlane.visible = false; 
+          scene.add(imagePlane);
+        });
+
+        // Controller for interaction
+        controller = renderer.xr.getController(0);
+        scene.add(controller);
+
+        // Event to place image on tap
+        controller.addEventListener('select', onSelect);
+      }
+
+      function onSelect() {
+        if (reticle.visible) {
+          imagePlane.position.setFromMatrixPosition(reticle.matrix);
+          imagePlane.visible = true; // Show the image plane
         }
       }
 
-      document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] }));
+      function animate() {
+        renderer.setAnimationLoop(render);
+      }
 
-      window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-      });
-    }
-
-    function onSessionStart(session) {
-      session.addEventListener('end', () => {
-        hitTestSourceRequested = false;
-        hitTestSource = null;
-        imagePlaced = false; 
-      });
-
-      renderer.xr.setSession(session);
-
-      renderer.setAnimationLoop((timestamp, frame) => {
+      function render(timestamp, frame) {
         if (frame) {
           const referenceSpace = renderer.xr.getReferenceSpace();
+          const session = renderer.xr.getSession();
 
           if (!hitTestSourceRequested) {
-            session.requestReferenceSpace('viewer').then((viewerSpace) => {
-              session.requestHitTestSource({ space: viewerSpace }).then((source) => {
+            session.requestReferenceSpace('viewer').then((referenceSpace) => {
+              session.requestHitTestSource({ space: referenceSpace }).then((source) => {
                 hitTestSource = source;
               });
             });
+
+            session.addEventListener('end', () => {
+              hitTestSourceRequested = false;
+              hitTestSource = null;
+            });
+
             hitTestSourceRequested = true;
           }
 
           if (hitTestSource) {
             const hitTestResults = frame.getHitTestResults(hitTestSource);
 
-            if (hitTestResults.length > 0 && !imagePlaced) {  
+            if (hitTestResults.length) {
               const hit = hitTestResults[0];
               const pose = hit.getPose(referenceSpace);
-              placeArtworkAtPose(pose);  
+
+              reticle.visible = true;
+              reticle.matrix.fromArray(pose.transform.matrix);
+            } else {
+              reticle.visible = false;
             }
           }
         }
 
         renderer.render(scene, camera);
-      });
-    }
-
-    init();
-    renderer.xr.addEventListener('sessionstart', onSessionStart);
-  </script>
-</body>
+      }
+    </script>
+  </body>
 </html>
