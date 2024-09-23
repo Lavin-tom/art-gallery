@@ -17,8 +17,15 @@
     import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.min.js';
     import { ARButton } from 'https://cdn.rawgit.com/mrdoob/three.js/r128/examples/jsm/webxr/ARButton.js';
 
+<<<<<<< HEAD
     let scene, camera, renderer, hitTestSource, hitTestSourceRequested, artworkReady = false;
     let imagePlaced = false;  // Track if the image has been placed
+=======
+    let scene, camera, renderer, controller, reticle;
+    let hitTestSource = null;
+    let hitTestSourceRequested = false;
+    let artworkReady = false;
+>>>>>>> 057a84ce476d29d2942e5f0997ba0ccdb1dabf5d
 
     function init() {
       scene = new THREE.Scene();
@@ -35,7 +42,11 @@
 
       // Load image texture for artwork
       const artworkTexture = new THREE.TextureLoader().load(
+<<<<<<< HEAD
         'assets/ar7.jpg',  
+=======
+        'assets/ar7.jpg',  // Ensure this path is correct
+>>>>>>> 057a84ce476d29d2942e5f0997ba0ccdb1dabf5d
         () => {
           artworkReady = true;
         }
@@ -51,7 +62,10 @@
           artworkClone.position.setFromMatrixPosition(pose.transform.matrix);
           artworkClone.lookAt(camera.position);  
           scene.add(artworkClone);
+<<<<<<< HEAD
           imagePlaced = true;  
+=======
+>>>>>>> 057a84ce476d29d2942e5f0997ba0ccdb1dabf5d
         }
       }
 
