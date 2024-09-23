@@ -5,11 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Markerless AR with Image</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@webxr-input-profiles/motion-controllers"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/webxr/ARButton.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/webxr/ARButton.js" type="module"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/TextureLoader.js" type="module"></script>
   </head>
   <body>
-    <script>
+    <script type="module">
+      import { ARButton } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/webxr/ARButton.js';
+      import { TextureLoader } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/TextureLoader.js';
+
       let camera, scene, renderer;
       let reticle;
       let hitTestSource = null;
@@ -54,12 +57,12 @@
         scene.add(reticle);
 
         // Create a plane to display the image
-        const textureLoader = new THREE.TextureLoader();
-        textureLoader.load('assets/art7.jpg', (texture) => {
+        const textureLoader = new TextureLoader();
+        textureLoader.load('path_to_your_image.jpg', (texture) => {
           imageMaterial = new THREE.MeshBasicMaterial({ map: texture });
-          const planeGeometry = new THREE.PlaneGeometry(0.5, 0.5); 
+          const planeGeometry = new THREE.PlaneGeometry(0.5, 0.5); // Adjust size as needed
           imagePlane = new THREE.Mesh(planeGeometry, imageMaterial);
-          imagePlane.visible = false; 
+          imagePlane.visible = false; // Initially hidden
           scene.add(imagePlane);
         });
 
