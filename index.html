@@ -17,8 +17,9 @@
     import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.min.js';
     import { ARButton } from 'https://cdn.rawgit.com/mrdoob/three.js/r128/examples/jsm/webxr/ARButton.js';
 
-    let scene, camera, renderer, hitTestSource, hitTestSourceRequested, artworkReady = false;
-    let imagePlaced = false;  
+    let scene, camera, renderer, hitTestSource = null, hitTestSourceRequested = false;
+    let artworkReady = false;
+    let imagePlaced = false;
 
     function init() {
       scene = new THREE.Scene();
@@ -35,7 +36,7 @@
 
       // Load image texture for artwork
       const artworkTexture = new THREE.TextureLoader().load(
-        'assets/ar7.jpg',  
+        'assets/ar7.jpg',
         () => {
           artworkReady = true;
         }
@@ -43,15 +44,14 @@
 
       const artworkMaterial = new THREE.MeshBasicMaterial({ map: artworkTexture });
       const artworkPlane = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1), artworkMaterial);
-      artworkPlane.rotation.x = -Math.PI / 2;  
 
+      // Function to place artwork in AR space at the hit test pose
       function placeArtworkAtPose(pose) {
-        if (artworkReady && !imagePlaced) {  
-          const artworkClone = artworkPlane.clone();
-          artworkClone.position.setFromMatrixPosition(pose.transform.matrix);
-          artworkClone.lookAt(camera.position); 
-          scene.add(artworkClone);
-          imagePlaced = true;  
+        if (artworkReady && !imagePlaced) {
+          artworkPlane.position.setFromMatrixPosition(pose.transform.matrix);
+          artworkPlane.quaternion.setFromRotationMatrix(pose.transform.matrix);
+          scene.add(artworkPlane);
+          imagePlaced = true; 
         }
       }
 
@@ -68,6 +68,7 @@
       session.addEventListener('end', () => {
         hitTestSourceRequested = false;
         hitTestSource = null;
+        imagePlaced = false; 
       });
 
       renderer.xr.setSession(session);
@@ -85,10 +86,10 @@
             hitTestSourceRequested = true;
           }
 
-          if (hitTestSource && !imagePlaced) {  
+          if (hitTestSource) {
             const hitTestResults = frame.getHitTestResults(hitTestSource);
 
-            if (hitTestResults.length > 0) {
+            if (hitTestResults.length > 0 && !imagePlaced) {  
               const hit = hitTestResults[0];
               const pose = hit.getPose(referenceSpace);
               placeArtworkAtPose(pose);  
