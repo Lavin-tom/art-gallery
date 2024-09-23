@@ -4,10 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Markerless AR with Image</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.154.0/build/three.min.js"></script>
     <script type="module">
-      import { ARButton } from 'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/jsm/webxr/ARButton.js';
-      import { TextureLoader } from 'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/jsm/loaders/TextureLoader.js';
+      import { ARButton } from 'https://cdn.jsdelivr.net/npm/three@0.154.0/examples/jsm/webxr/ARButton.js';
+      import { TextureLoader } from 'https://cdn.jsdelivr.net/npm/three@0.154.0/examples/jsm/loaders/TextureLoader.js';
 
       let camera, scene, renderer;
       let reticle;
@@ -24,12 +24,7 @@
         scene = new THREE.Scene();
 
         // Create a camera
-        camera = new THREE.PerspectiveCamera(
-          70,
-          window.innerWidth / window.innerHeight,
-          0.1,
-          1000
-        );
+        camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
 
         // Create a WebGLRenderer for AR
         renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
