@@ -38,7 +38,7 @@
 
             // Create texture loader
             const textureLoader = new THREE.TextureLoader();
-            textureLoader.load('path_to_your_image.jpg', (texture) => {
+            textureLoader.load('assets/art7.jpg', (texture) => {
                 imageMaterial = new THREE.MeshBasicMaterial({ map: texture });
                 const planeGeometry = new THREE.PlaneGeometry(0.5, 0.5);
                 imagePlane = new THREE.Mesh(planeGeometry, imageMaterial);
