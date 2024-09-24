@@ -14,9 +14,9 @@
       }
     </script>
     <style>
-      /* Add some basic styling for the log messages */
+      /* Styling for the log messages */
       #log-container {
-        position: absolute;
+        position: fixed;
         top: 20px;
         left: 50%;
         transform: translateX(-50%);
@@ -26,7 +26,8 @@
         border-radius: 8px;
         font-family: Arial, sans-serif;
         font-size: 14px;
-        max-width: 300px;
+        max-width: 80%;
+        z-index: 1000;
         text-align: center;
       }
     </style>
@@ -190,29 +191,29 @@
       let localSpace = null;
       let hitTestSourceInitialized = false;
 
-async function initializeHitTestSource() {
-  const session = renderer.xr.getSession();
-  const viewerSpace = await session.requestReferenceSpace("viewer");
-  localSpace = await session.requestReferenceSpace("local");
+      async function initializeHitTestSource() {
+        const session = renderer.xr.getSession();
+        const viewerSpace = await session.requestReferenceSpace("viewer");
+        localSpace = await session.requestReferenceSpace("local");
 
-  try {
-    hitTestSource = await session.requestHitTestSource({ space: viewerSpace });
-    hitTestSourceInitialized = true;
+        try {
+          hitTestSource = await session.requestHitTestSource({ space: viewerSpace });
+          hitTestSourceInitialized = true;
 
-    logStatus("Hit test source initialized successfully.");
-  } catch (error) {
-    logStatus("Failed to initialize hit test source.");
-    console.error(error);
-  }
+          logStatus("Hit test source initialized successfully.");
+        } catch (error) {
+          logStatus("Failed to initialize hit test source.");
+          console.error(error);
+        }
 
-  session.addEventListener("end", () => {
-    isXRSessionStarted = false;
-    hitTestSourceInitialized = false;
-    hitTestSource = null;
-  });
+        session.addEventListener("end", () => {
+          isXRSessionStarted = false;
+          hitTestSourceInitialized = false;
+          hitTestSource = null;
+        });
 
-  logStatus("Looking for a surface...");
-}
+        logStatus("Looking for a surface...");
+      }
 
       function onWindowResize() {
         camera.aspect = window.innerWidth / window.innerHeight;
@@ -224,26 +225,25 @@ async function initializeHitTestSource() {
         renderer.setAnimationLoop(render);
       }
 
-function render(timestamp, frame) {
-  if (frame && hitTestSourceInitialized) {
-    const hitTestResults = frame.getHitTestResults(hitTestSource);
-    if (hitTestResults.length > 0) {
-      hitSomething = true;
-      const hit = hitTestResults[0];
-      const pose = hit.getPose(localSpace);
+      function render(timestamp, frame) {
+        if (frame && hitTestSourceInitialized) {
+          const hitTestResults = frame.getHitTestResults(hitTestSource);
+          if (hitTestResults.length > 0) {
+            hitSomething = true;
+            const hit = hitTestResults[0];
+            const pose = hit.getPose(localSpace);
 
-      reticle.visible = true; // Show reticle
-      reticle.matrix.fromArray(pose.transform.matrix);
-      logStatus("Surface found. Tap to place the image.");
-    } else {
-      reticle.visible = true; // Force the reticle to show for testing purposes
-      hitSomething = false;
-      logStatus("Looking for a surface...");
-    }
-  }
-  renderer.render(scene, camera);
-}
-
+            reticle.visible = true; // Show reticle
+            reticle.matrix.fromArray(pose.transform.matrix);
+            logStatus("Surface found. Tap to place the image.");
+          } else {
+            reticle.visible = true; // Force the reticle to show for testing purposes
+            hitSomething = false;
+            logStatus("Looking for a surface...");
+          }
+        }
+        renderer.render(scene, camera);
+      }
     </script>
   </body>
 </html>
