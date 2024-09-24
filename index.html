@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>AR Image Placement</title>
+    <title>AR Image Placement with Logging</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
     <link rel="stylesheet" href="./css/index.css" />
@@ -13,6 +13,23 @@
         }
       }
     </script>
+    <style>
+      /* Add some basic styling for the log messages */
+      #log-container {
+        position: absolute;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 10px;
+        border-radius: 8px;
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        max-width: 300px;
+        text-align: center;
+      }
+    </style>
   </head>
   <body>
     <div class="bg"></div>
@@ -34,6 +51,9 @@
       </div>
     </div>
 
+    <!-- Log Container for showing AR status -->
+    <div id="log-container">Initializing AR...</div>
+
     <div id="overlay">
       <div id="look_for_surface_icon"></div>
       <div id="close_ar_button"></div>
@@ -52,6 +72,8 @@
       let imageMesh = null;
 
       let isXRSessionStarted = false;
+      let logContainer = document.getElementById("log-container");
+
       const close_ar_button = document.getElementById("close_ar_button");
       close_ar_button.addEventListener("click", () => {
         location.reload();
@@ -106,10 +128,17 @@
         controller.addEventListener("select", onSelect);
         scene.add(controller);
 
+        logStatus("AR Session Started");
+
         addReticleToScene();
         addImageToScene();
 
         window.addEventListener("resize", onWindowResize);
+      }
+
+      function logStatus(message) {
+        logContainer.textContent = message;
+        console.log(message); // Also log to console for debugging
       }
 
       function addReticleToScene() {
@@ -122,8 +151,16 @@
       }
 
       function addImageToScene() {
-        const imageTexture = new THREE.TextureLoader().load("./assets/ar7.jpg");
-        const imageGeometry = new THREE.PlaneGeometry(1, 1); 
+        logStatus("Loading image...");
+
+        const imageTexture = new THREE.TextureLoader().load(
+          "./assets/images/your-image.png",
+          () => logStatus("Image loaded successfully."),
+          undefined,
+          () => logStatus("Error loading image.")
+        );
+        
+        const imageGeometry = new THREE.PlaneGeometry(1, 1); // Adjust size as needed
         const imageMaterial = new THREE.MeshBasicMaterial({
           map: imageTexture,
           transparent: true,
@@ -131,15 +168,20 @@
         });
 
         imageMesh = new THREE.Mesh(imageGeometry, imageMaterial);
-        imageMesh.visible = false; 
+        imageMesh.visible = false; // Initially hidden, will appear when placed
         scene.add(imageMesh);
+
+        logStatus("Image added to the scene.");
       }
 
       function onSelect() {
         if (hitSomething && reticle.visible) {
+          logStatus("Image placed at surface.");
           imageMesh.position.setFromMatrixPosition(reticle.matrix);
-          imageMesh.visible = true; 
-          reticle.visible = false;  
+          imageMesh.visible = true; // Show the image once placed
+          reticle.visible = false;  // Hide the reticle once the image is placed
+        } else {
+          logStatus("No surface detected. Move your camera to scan a flat surface.");
         }
       }
 
@@ -160,6 +202,8 @@
           hitTestSourceInitialized = false;
           hitTestSource = null;
         });
+
+        logStatus("Looking for a surface...");
       }
 
       function onWindowResize() {
@@ -182,9 +226,11 @@
 
             reticle.visible = true;
             reticle.matrix.fromArray(pose.transform.matrix);
+            logStatus("Surface found. Tap to place the image.");
           } else {
             reticle.visible = false;
             hitSomething = false;
+            logStatus("Looking for a surface...");
           }
         }
         renderer.render(scene, camera);
