@@ -21,7 +21,7 @@ u {
   position: fixed;
   width: 100vw;
   height: 100vh;
-  background-image: url("../assets/Images/background.jpg");
+  background-image: url("../assets/Images/Background.jpg");
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center;
@@ -33,7 +33,7 @@ u {
   height: 28vw;
   left: 50%;
   transform: translate(-50%, 0);
-  background-image: url("../assets/Images/direction.png");
+  background-image: url("../assets/Images/Direction.png");
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
@@ -81,7 +81,7 @@ u {
   right: 5vw;
   width: 7.5vw;
   height: 7.5vw;
-  background-image: url("../assets/Icons/close.svg");
+  background-image: url("../assets/Icons/Close.svg");
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center;
