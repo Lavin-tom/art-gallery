@@ -72,10 +72,10 @@
 
       let isXRSessionStarted = false;
       let logContainer = document.getElementById("log-container");
-      const closeArButton = document.getElementById("close-ar-button");
+      const close_ar_button = document.getElementById("close_ar_button");
 
       // Reload page or stop AR when clicking the close button
-      closeArButton.addEventListener("click", () => {
+      close_ar_button.addEventListener("click", () => {
         if (renderer.xr.isPresenting) {
           renderer.xr.getSession().end();
         } else {
