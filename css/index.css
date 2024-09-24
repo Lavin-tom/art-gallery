@@ -21,7 +21,7 @@ u {
   position: fixed;
   width: 100vw;
   height: 100vh;
-  background-image: url("../assets/images/background.jpg");
+  background-image: url("../assets/Images/background.jpg");
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center;
@@ -33,7 +33,7 @@ u {
   height: 28vw;
   left: 50%;
   transform: translate(-50%, 0);
-  background-image: url("../assets/images/direction.png");
+  background-image: url("../assets/Images/direction.png");
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
@@ -63,7 +63,7 @@ u {
   left: 50%;
   transform: translate(-50%, -50%);
   visibility: hidden;
-  background-image: url("../assets/icons/flat_surface.png");
+  background-image: url("../assets/Icons/flat_surface.png");
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
@@ -81,7 +81,7 @@ u {
   right: 5vw;
   width: 7.5vw;
   height: 7.5vw;
-  background-image: url("../assets/icons/close.svg");
+  background-image: url("../assets/Icons/close.svg");
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center;
@@ -98,7 +98,7 @@ u {
 .ar-exp {
   width: 100%;
   height: 5vw;
-  background-image: url("../assets/icons/AR_exp.svg");
+  background-image: url("../assets/Icons/AR_exp.svg");
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
