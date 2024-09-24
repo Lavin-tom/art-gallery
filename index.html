@@ -53,9 +53,8 @@
     </div>
 
     <!-- Log Container for showing AR status -->
-    <div id="log-container">Initializing AR...</div>
-
     <div id="overlay">
+      <div id="log-container">Initializing AR...</div> <!-- Moved log inside the overlay -->
       <div id="look_for_surface_icon"></div>
       <div id="close_ar_button"></div>
       <div id="footer" class="footer footer-2"></div>
@@ -135,7 +134,9 @@
         addImageToScene();
 
         window.addEventListener("resize", onWindowResize);
-        renderer.xr.getSession().then(initializeHitTestSource);
+
+        // Wait for the session to start before initializing hit test
+        renderer.xr.addEventListener('sessionstart', initializeHitTestSource);
       }
 
       function logStatus(message) {
@@ -193,13 +194,17 @@
 
       async function initializeHitTestSource() {
         const session = renderer.xr.getSession();
+        if (!session) {
+          logStatus("Failed to start AR session.");
+          return;
+        }
+
         const viewerSpace = await session.requestReferenceSpace("viewer");
         localSpace = await session.requestReferenceSpace("local");
 
         try {
           hitTestSource = await session.requestHitTestSource({ space: viewerSpace });
           hitTestSourceInitialized = true;
-
           logStatus("Hit test source initialized successfully.");
         } catch (error) {
           logStatus("Failed to initialize hit test source.");
