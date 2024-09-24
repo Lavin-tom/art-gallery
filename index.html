@@ -53,9 +53,9 @@
     </div>
 
     <div id="overlay">
-      <div id="log-container">Initializing AR...</div> 
+      <div id="log-container">Initializing AR...</div>
       <div id="look_for_surface_icon"></div>
-      <div id="close_ar_button"></div>
+	  <div id="close_ar_button"></div>
       <div id="footer" class="footer footer-2"></div>
     </div>
 
@@ -72,10 +72,15 @@
 
       let isXRSessionStarted = false;
       let logContainer = document.getElementById("log-container");
+      const closeArButton = document.getElementById("close-ar-button");
 
-      const close_ar_button = document.getElementById("close_ar_button");
-      close_ar_button.addEventListener("click", () => {
-        location.reload();
+      // Reload page or stop AR when clicking the close button
+      closeArButton.addEventListener("click", () => {
+        if (renderer.xr.isPresenting) {
+          renderer.xr.getSession().end();
+        } else {
+          location.reload();
+        }
       });
 
       if (navigator.xr) {
@@ -139,7 +144,7 @@
 
       function logStatus(message) {
         logContainer.textContent = message;
-        console.log(message); 
+        console.log(message);
       }
 
       function addReticleToScene() {
@@ -168,7 +173,7 @@
           side: THREE.DoubleSide,
         });
 
-        imageMesh = new THREE.Mesh(imageGeometry, imageMaterial);
+        imageMesh = new THREE.Mesh(imageGeometry, imageMaterial);     
         imageMesh.visible = false; 
         scene.add(imageMesh);
 
