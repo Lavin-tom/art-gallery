@@ -72,7 +72,7 @@
 
       let isXRSessionStarted = false;
       let logContainer = document.getElementById("log-container");
-      const close_ar_button = document.getElementById("close_ar_button");
+      var close_ar_button = document.getElementById("close_ar_button");
 
       // Reload page or stop AR when clicking the close button
       close_ar_button.addEventListener("click", () => {
@@ -218,8 +218,9 @@
           isXRSessionStarted = false;
           hitTestSourceInitialized = false;
           hitTestSource = null;
+		  close_ar_button.style.visibility = "hidden";
         });
-
+		close_ar_button.style.visibility = "visible";
         logStatus("Looking for a surface...");
       }
 
