@@ -157,41 +157,91 @@
         scene.add(reticle);
       }
 
-      function addImageToScene() {
-        logStatus("Loading image...");
-
-        const imageTexture = new THREE.TextureLoader().load(
-          "./assets/Arts/ar7.jpg",
-          () => logStatus("Image loaded successfully."),
-          undefined,
-          () => logStatus("Error loading image.")
-        );
-        
-        const imageGeometry = new THREE.PlaneGeometry(1, 1); 
-        const imageMaterial = new THREE.MeshBasicMaterial({
-          map: imageTexture,
-          transparent: true,
-          side: THREE.DoubleSide,
-        });
-
-        imageMesh = new THREE.Mesh(imageGeometry, imageMaterial);     
-        imageMesh.visible = false; 
-        scene.add(imageMesh);
-
-        logStatus("Image added to the scene.");
-      }
-
+	 const images = [
+	 "./assets/Arts/ar1.jpg",
+	 "./assets/Arts/ar2.jpg",
+	 "./assets/Arts/ar3.jpg"
+	 ]; 
+	 let currentImageIndex = 0; 
+	 let placedImages = []; 
+	 
+	 function addImageToScene(index) {
+	 if (index < images.length) {
+		 logStatus("Loading image...");
+	 
+		 const imageTexture = new THREE.TextureLoader().load(
+		 images[index],
+		 () => logStatus("Image loaded successfully."),
+		 undefined,
+		 () => logStatus("Error loading image.")
+		 );
+	 
+		 const imageGeometry = new THREE.PlaneGeometry(1, 1);
+		 const imageMaterial = new THREE.MeshBasicMaterial({
+		 map: imageTexture,
+		 transparent: true,
+		 side: THREE.DoubleSide,
+		 });
+	 
+		 const imageMesh = new THREE.Mesh(imageGeometry, imageMaterial);
+		 imageMesh.visible = false; 
+		 scene.add(imageMesh);
+		 
+		 placedImages.push(imageMesh); 
+	 
+		 logStatus("Image added to the scene.");
+	 } else {
+		 logStatus("No more images to place.");
+	 }
+	 }
+	 
 	 function onSelect() {
 	 if (hitSomething && reticle.visible) {
-		 logStatus("Image placed at surface.");
-		 imageMesh.position.setFromMatrixPosition(reticle.matrix);
-		 imageMesh.visible = true;
-		 reticle.visible = false;
+		 logStatus(`Placing image ${currentImageIndex + 1}.`);
+		 
+		 const currentImageMesh = placedImages[currentImageIndex]; // Reference the current image
+		 currentImageMesh.position.setFromMatrixPosition(reticle.matrix);
+		 
+		 const rotation = new THREE.Quaternion().setFromRotationMatrix(reticle.matrix);
+		 currentImageMesh.quaternion.copy(rotation);
+		 
+		 currentImageMesh.visible = true; 
+		 reticle.visible = false; 
 		 look_for_surface_icon.style.visibility = "hidden"; 
+	 
+		 currentImageIndex++; 
+		 if (currentImageIndex < images.length) {
+		 addImageToScene(currentImageIndex); 
+		 }
 	 } else {
 		 logStatus("No surface detected. Move your camera to scan a flat surface.");
 	 }
 	 }
+	 
+	 function removeImage(imageMesh) {
+	 scene.remove(imageMesh); 
+	 logStatus("Image removed.");
+	 }
+	 
+	 function checkForImageRemoval(event) {
+	 const raycaster = new THREE.Raycaster();
+	 const mouse = new THREE.Vector2();
+	 
+	 mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+	 mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+	 
+	 raycaster.setFromCamera(mouse, camera); 
+	 
+	 const intersects = raycaster.intersectObjects(placedImages); 
+	 
+	 if (intersects.length > 0) {
+		 removeImage(intersects[0].object); 
+	 }
+	 }
+	 
+	 addImageToScene(currentImageIndex);
+	 
+	 window.addEventListener('click', checkForImageRemoval);
 
       let hitTestSource = null;
       let localSpace = null;
