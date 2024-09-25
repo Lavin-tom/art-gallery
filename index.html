@@ -71,6 +71,7 @@
       let imageMesh = null;
 
       let isXRSessionStarted = false;
+	  const look_for_surface_icon = document.getElementById("look_for_surface_icon");
       let logContainer = document.getElementById("log-container");
       var close_ar_button = document.getElementById("close_ar_button");
 
@@ -180,16 +181,17 @@
         logStatus("Image added to the scene.");
       }
 
-      function onSelect() {
-        if (hitSomething && reticle.visible) {
-          logStatus("Image placed at surface.");
-          imageMesh.position.setFromMatrixPosition(reticle.matrix);
-          imageMesh.visible = true; 
-          reticle.visible = false;  
-        } else {
-          logStatus("No surface detected. Move your camera to scan a flat surface.");
-        }
-      }
+	 function onSelect() {
+	 if (hitSomething && reticle.visible) {
+		 logStatus("Image placed at surface.");
+		 imageMesh.position.setFromMatrixPosition(reticle.matrix);
+		 imageMesh.visible = true;
+		 reticle.visible = false;
+		 look_for_surface_icon.style.visibility = "hidden"; 
+	 } else {
+		 logStatus("No surface detected. Move your camera to scan a flat surface.");
+	 }
+	 }
 
       let hitTestSource = null;
       let localSpace = null;
@@ -234,25 +236,27 @@
         renderer.setAnimationLoop(render);
       }
 
-      function render(timestamp, frame) {
-        if (frame && hitTestSourceInitialized) {
-          const hitTestResults = frame.getHitTestResults(hitTestSource);
-          if (hitTestResults.length > 0) {
-            hitSomething = true;
-            const hit = hitTestResults[0];
-            const pose = hit.getPose(localSpace);
-
-            reticle.visible = true; 
-            reticle.matrix.fromArray(pose.transform.matrix);
-            logStatus("Surface found. Tap to place the image.");
-          } else {
-            reticle.visible = true; 
-            hitSomething = false;
-            logStatus("Looking for a surface...");
-          }
-        }
-        renderer.render(scene, camera);
-      }
+	function render(timestamp, frame) {
+	if (frame && hitTestSourceInitialized) {
+		const hitTestResults = frame.getHitTestResults(hitTestSource);
+		if (hitTestResults.length > 0) {
+		hitSomething = true;
+		const hit = hitTestResults[0];
+		const pose = hit.getPose(localSpace);
+	
+		reticle.visible = true;
+		reticle.matrix.fromArray(pose.transform.matrix);
+		logStatus("Surface found. Tap to place the image.");
+		look_for_surface_icon.style.visibility = "hidden";  
+		} else {
+		hitSomething = false;
+		reticle.visible = true;
+		logStatus("Looking for a surface...");
+		look_for_surface_icon.style.visibility = "visible"; 
+		}
+	}
+	renderer.render(scene, camera);
+	}
     </script>
   </body>
 </html>
