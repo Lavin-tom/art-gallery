@@ -111,10 +111,12 @@
     controller.addEventListener("select", onSelect);
     scene.add(controller);
 
-    logStatus("AR Session Started");
     addReticleToScene();
-    window.addEventListener("resize", onWindowResize);
-    renderer.xr.addEventListener('sessionstart', initializeHitTestSource);
+    renderer.xr.addEventListener('sessionstart', () => {
+        logStatus("AR Session Started");
+        addImageToScene(currentImageIndex); // Ensure the first image is added
+        initializeHitTestSource();
+    });
   }
 
   function logStatus(message) {
@@ -209,6 +211,9 @@ function removeImage(imageMesh) {
 
 
   function checkForImageRemoval(event) {
+      if (!hitSomething || !reticle.visible) {
+        return; 
+    }
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
     
