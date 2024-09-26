@@ -158,25 +158,31 @@
     scene.add(reticle);
   }
 
-  function onSelect() {
-    if (hitSomething && reticle.visible) {
-      logStatus(`Placing image at index ${currentImageIndex}.`);
-      const currentImageMesh = placedImages[currentImageIndex];
-      currentImageMesh.position.setFromMatrixPosition(reticle.matrix);
-      const rotation = new THREE.Quaternion().setFromRotationMatrix(reticle.matrix);
-      currentImageMesh.quaternion.copy(rotation);
-      currentImageMesh.visible = true; 
-      reticle.visible = false; 
-      look_for_surface_icon.style.visibility = "hidden"; 
+function onSelect() {
+  if (hitSomething && reticle.visible) {
+    logStatus(`Placing image at index ${currentImageIndex}.`);
 
-      currentImageIndex++; 
-      if (currentImageIndex < images.length) {
-        addImageToScene(currentImageIndex); 
-      }
+    const currentImageMesh = placedImages[currentImageIndex];
+    currentImageMesh.position.setFromMatrixPosition(reticle.matrix);
+
+    const rotation = new THREE.Quaternion().setFromRotationMatrix(reticle.matrix);
+    currentImageMesh.quaternion.copy(rotation);
+
+    currentImageMesh.visible = true;
+
+    reticle.visible = false; 
+    look_for_surface_icon.style.visibility = "hidden"; 
+
+    currentImageIndex++; 
+    if (currentImageIndex < images.length) {
+      addImageToScene(currentImageIndex); 
     } else {
-      logStatus("No surface detected. Move your camera to scan a flat surface.");
+      logStatus("All images placed.");
     }
+  } else {
+    logStatus("No surface detected. Move your camera to scan a flat surface.");
   }
+}
 
   function removeImage(imageMesh) {
     scene.remove(imageMesh); 
