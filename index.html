@@ -87,14 +87,9 @@ function addImageToScene(index) {
 
         const imageTexture = new THREE.TextureLoader().load(
             images[index],
-            () => {
-                logStatus("Image loaded successfully.");
-                placedImages[index].visible = false; 
-            },
+            () => logStatus("Image loaded successfully."),
             undefined,
-            () => {
-                logStatus("Error loading image.");
-            }
+            () => logStatus("Error loading image.")
         );
 
         const imageGeometry = new THREE.PlaneGeometry(1, 1);
@@ -105,7 +100,7 @@ function addImageToScene(index) {
         });
 
         const imageMesh = new THREE.Mesh(imageGeometry, imageMaterial);
-        imageMesh.visible = false; 
+        imageMesh.visible = false; // Initially invisible
         scene.add(imageMesh);
         placedImages.push(imageMesh);
 
@@ -163,14 +158,19 @@ function addImageToScene(index) {
     scene.add(reticle);
   }
 
+let isPlacing = false;
+
 function onSelect() {
+    if (isPlacing) return; // Prevent further calls
+    isPlacing = true;
+
     logStatus("Select event triggered.");
 
     if (hitSomething && reticle.visible) {
         logStatus(`Placing image at index ${currentImageIndex}.`);
         
-        const currentImageMesh = placedImages[currentImageIndex]; 
-        if (currentImageMesh && currentImageMesh.visible === false) {
+        const currentImageMesh = placedImages[currentImageIndex];
+        if (currentImageMesh && !currentImageMesh.visible) {
             currentImageMesh.position.setFromMatrixPosition(reticle.matrix);
             const rotation = new THREE.Quaternion().setFromRotationMatrix(reticle.matrix);
             currentImageMesh.quaternion.copy(rotation);
@@ -191,6 +191,11 @@ function onSelect() {
     } else {
         logStatus("No surface detected or reticle not visible.");
     }
+
+    // Reset after a short delay
+    setTimeout(() => {
+        isPlacing = false;
+    }, 300); // Adjust the timeout duration as needed
 }
 
   function removeImage(imageMesh) {
