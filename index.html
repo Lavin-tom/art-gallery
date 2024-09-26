@@ -81,34 +81,34 @@
   let currentImageIndex = 0; 
   let placedImages = []; 
 
-  function addImageToScene(index) {
+function addImageToScene(index) {
     if (index < images.length) {
-      logStatus("Loading image...");
+        logStatus("Loading image...");
 
-      const imageTexture = new THREE.TextureLoader().load(
-        images[index],
-        () => logStatus("Image loaded successfully."),
-        undefined,
-        () => logStatus("Error loading image.")
-      );
+        const imageTexture = new THREE.TextureLoader().load(
+            images[index],
+            () => logStatus("Image loaded successfully."),
+            undefined,
+            () => logStatus("Error loading image.")
+        );
 
-      const imageGeometry = new THREE.PlaneGeometry(1, 1);
-      const imageMaterial = new THREE.MeshBasicMaterial({
-        map: imageTexture,
-        transparent: true,
-        side: THREE.DoubleSide,
-      });
+        const imageGeometry = new THREE.PlaneGeometry(1, 1);
+        const imageMaterial = new THREE.MeshBasicMaterial({
+            map: imageTexture,
+            transparent: true,
+            side: THREE.DoubleSide,
+        });
 
-      const imageMesh = new THREE.Mesh(imageGeometry, imageMaterial);
-      imageMesh.visible = false; 
-      scene.add(imageMesh);
-      placedImages.push(imageMesh); 
+        const imageMesh = new THREE.Mesh(imageGeometry, imageMaterial);
+        imageMesh.visible = false; // Initially invisible
+        scene.add(imageMesh);
+        placedImages.push(imageMesh); // Store the mesh
 
-      logStatus("Image added to the scene.");
+        logStatus("Image added to the scene.");
     } else {
-      logStatus("No more images to place.");
+        logStatus("No more images to place.");
     }
-  }
+}
 
   function init() {
     const container = document.createElement("div");
@@ -159,30 +159,35 @@
   }
 
 function onSelect() {
-  if (hitSomething && reticle.visible) {
-    logStatus(`Placing image at index ${currentImageIndex}.`);
+    logStatus("Select event triggered.");
+    
+    if (hitSomething && reticle.visible) {
+        logStatus(`Placing image at index ${currentImageIndex}.`);
+        
+        const currentImageMesh = placedImages[currentImageIndex]; // Reference the current image
+        if (currentImageMesh) {
+            currentImageMesh.position.setFromMatrixPosition(reticle.matrix);
+            const rotation = new THREE.Quaternion().setFromRotationMatrix(reticle.matrix);
+            currentImageMesh.quaternion.copy(rotation);
+            currentImageMesh.visible = true; // Make it visible when placing
+            
+            reticle.visible = false; 
+            look_for_surface_icon.style.visibility = "hidden"; 
 
-    const currentImageMesh = placedImages[currentImageIndex];
-    currentImageMesh.position.setFromMatrixPosition(reticle.matrix);
-
-    const rotation = new THREE.Quaternion().setFromRotationMatrix(reticle.matrix);
-    currentImageMesh.quaternion.copy(rotation);
-
-    currentImageMesh.visible = true;
-
-    reticle.visible = false; 
-    look_for_surface_icon.style.visibility = "hidden"; 
-
-    currentImageIndex++; 
-    if (currentImageIndex < images.length) {
-      addImageToScene(currentImageIndex); 
+            currentImageIndex++; 
+            if (currentImageIndex < images.length) {
+                addImageToScene(currentImageIndex); 
+            } else {
+                logStatus("All images placed.");
+            }
+        } else {
+            logStatus("No current image mesh to place.");
+        }
     } else {
-      logStatus("All images placed.");
+        logStatus("No surface detected or reticle not visible.");
     }
-  } else {
-    logStatus("No surface detected. Move your camera to scan a flat surface.");
-  }
 }
+
 
   function removeImage(imageMesh) {
     scene.remove(imageMesh); 
