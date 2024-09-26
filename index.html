@@ -139,7 +139,6 @@
 
     logStatus("AR Session Started");
     addReticleToScene();
-
     window.addEventListener("resize", onWindowResize);
     renderer.xr.addEventListener('sessionstart', initializeHitTestSource);
   }
@@ -151,7 +150,7 @@
 
   function addReticleToScene() {
     const geometry = new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2);
-    const material = new THREE.MeshBasicMaterial({ color: 0xffffff }); // Set a color to see the reticle
+    const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
     reticle = new THREE.Mesh(geometry, material);
     reticle.matrixAutoUpdate = false;
     reticle.visible = false; 
@@ -160,7 +159,6 @@
 
   function onSelect() {
     if (hitSomething && reticle.visible) {
-      logStatus(`Placing image ${currentImageIndex + 1}.`);
       const currentImageMesh = placedImages[currentImageIndex];
       currentImageMesh.position.setFromMatrixPosition(reticle.matrix);
       const rotation = new THREE.Quaternion().setFromRotationMatrix(reticle.matrix);
@@ -195,14 +193,19 @@
     const intersects = raycaster.intersectObjects(placedImages); 
     
     if (intersects.length > 0) {
-      removeImage(intersects[0].object); 
+      const imageToRemove = intersects[0].object; 
+      removeImage(imageToRemove);
+      
+      
+      placedImages = placedImages.filter(img => img !== imageToRemove);
+      currentImageIndex = placedImages.length; 
     }
   }
 
   close_ar_button.addEventListener("click", () => {
     const session = renderer.xr.getSession();
     if (session) {
-      session.end();
+      session.end(); 
     } else {
       location.reload(); 
     }
@@ -276,7 +279,7 @@
     renderer.render(scene, camera);
   }
 
-  animate();
+  animate(); 
 </script>
 
   </body>
