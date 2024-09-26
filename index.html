@@ -159,6 +159,7 @@
 
   function onSelect() {
     if (hitSomething && reticle.visible) {
+      logStatus(`Placing image at index ${currentImageIndex}.`); 
       const currentImageMesh = placedImages[currentImageIndex];
       currentImageMesh.position.setFromMatrixPosition(reticle.matrix);
       const rotation = new THREE.Quaternion().setFromRotationMatrix(reticle.matrix);
@@ -195,7 +196,6 @@
     if (intersects.length > 0) {
       const imageToRemove = intersects[0].object; 
       removeImage(imageToRemove);
-      
       
       placedImages = placedImages.filter(img => img !== imageToRemove);
       currentImageIndex = placedImages.length; 
