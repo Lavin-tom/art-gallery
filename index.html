@@ -67,6 +67,7 @@
   let controller;
   let reticle = null;
   let hitSomething = false;
+  let imageMesh = null;
 
   const look_for_surface_icon = document.getElementById("look_for_surface_icon");
   const logContainer = document.getElementById("log-container");
@@ -159,7 +160,7 @@
 
   function onSelect() {
     if (hitSomething && reticle.visible) {
-      logStatus(`Placing image at index ${currentImageIndex}.`); 
+      logStatus(`Placing image at index ${currentImageIndex}.`);
       const currentImageMesh = placedImages[currentImageIndex];
       currentImageMesh.position.setFromMatrixPosition(reticle.matrix);
       const rotation = new THREE.Quaternion().setFromRotationMatrix(reticle.matrix);
@@ -268,12 +269,12 @@
         reticle.visible = true;
         reticle.matrix.fromArray(pose.transform.matrix);
         logStatus("Surface found. Tap to place the image.");
-        look_for_surface_icon.style.visibility = "hidden";  
+        look_for_surface_icon.style.visibility = "hidden"; 
       } else {
         hitSomething = false;
-        reticle.visible = true;
-        logStatus("Looking for a surface...");
+        reticle.visible = false; 
         look_for_surface_icon.style.visibility = "visible"; 
+        logStatus("Looking for a surface...");
       }
     }
     renderer.render(scene, camera);
