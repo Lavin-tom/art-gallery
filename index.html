@@ -87,24 +87,25 @@ function addImageToScene(index) {
 
         const imageTexture = new THREE.TextureLoader().load(
             images[index],
-            () => logStatus("Image loaded successfully."),
+            (texture) => {
+                logStatus("Image loaded successfully.");
+                
+                const imageGeometry = new THREE.PlaneGeometry(1, 1);
+                const imageMaterial = new THREE.MeshBasicMaterial({
+                    map: texture,
+                    transparent: true,
+                    side: THREE.DoubleSide,
+                });
+
+                const imageMesh = new THREE.Mesh(imageGeometry, imageMaterial);
+                imageMesh.visible = false; // Initially invisible
+                scene.add(imageMesh);
+                placedImages.push(imageMesh); // Store the mesh
+                logStatus("Image added to the scene.");
+            },
             undefined,
             () => logStatus("Error loading image.")
         );
-
-        const imageGeometry = new THREE.PlaneGeometry(1, 1);
-        const imageMaterial = new THREE.MeshBasicMaterial({
-            map: imageTexture,
-            transparent: true,
-            side: THREE.DoubleSide,
-        });
-
-        const imageMesh = new THREE.Mesh(imageGeometry, imageMaterial);
-        imageMesh.visible = false; // Initially invisible
-        scene.add(imageMesh);
-        placedImages.push(imageMesh);
-
-        logStatus("Image added to the scene.");
     } else {
         logStatus("No more images to place.");
     }
@@ -161,15 +162,10 @@ function addImageToScene(index) {
 let isPlacing = false;
 
 function onSelect() {
-    if (isPlacing) return; // Prevent further calls
-    isPlacing = true;
-
-    logStatus("Select event triggered.");
-
     if (hitSomething && reticle.visible) {
         logStatus(`Placing image at index ${currentImageIndex}.`);
         
-        const currentImageMesh = placedImages[currentImageIndex];
+        const currentImageMesh = placedImages[currentImageIndex]; 
         if (currentImageMesh && !currentImageMesh.visible) {
             currentImageMesh.position.setFromMatrixPosition(reticle.matrix);
             const rotation = new THREE.Quaternion().setFromRotationMatrix(reticle.matrix);
@@ -191,17 +187,17 @@ function onSelect() {
     } else {
         logStatus("No surface detected or reticle not visible.");
     }
-
-    // Reset after a short delay
-    setTimeout(() => {
-        isPlacing = false;
-    }, 300); // Adjust the timeout duration as needed
 }
 
-  function removeImage(imageMesh) {
-    scene.remove(imageMesh); 
-    logStatus("Image removed.");
-  }
+function removeImage(imageMesh) {
+    if (imageMesh) {
+        scene.remove(imageMesh); 
+        logStatus("Image removed.");
+    } else {
+        logStatus("No image mesh to remove.");
+    }
+}
+
 
   function checkForImageRemoval(event) {
     const raycaster = new THREE.Raycaster();
