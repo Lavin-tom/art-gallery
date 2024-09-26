@@ -55,7 +55,7 @@
     <div id="overlay">
       <div id="log-container">Initializing AR...</div>
       <div id="look_for_surface_icon"></div>
-	  <div id="close_ar_button"></div>
+      <div id="close_ar_button"></div>
       <div id="footer" class="footer footer-2"></div>
     </div>
 
@@ -68,49 +68,54 @@
       let xrReferenceSpace = null;
       let reticle = null;
       let hitSomething = false;
-      let imageMesh = null;
 
-      let isXRSessionStarted = false;
-	  const look_for_surface_icon = document.getElementById("look_for_surface_icon");
-      let logContainer = document.getElementById("log-container");
-      var close_ar_button = document.getElementById("close_ar_button");
+      const look_for_surface_icon = document.getElementById("look_for_surface_icon");
+      const logContainer = document.getElementById("log-container");
+      const close_ar_button = document.getElementById("close_ar_button");
 
-      // Reload page or stop AR when clicking the close button
-      close_ar_button.addEventListener("click", () => {
-        if (renderer.xr.isPresenting) {
-          renderer.xr.getSession().end();
+      const images = [
+        "./assets/Arts/ar1.jpg",
+        "./assets/Arts/ar2.jpg",
+        "./assets/Arts/ar3.jpg"
+      ];
+      let currentImageIndex = 0; 
+      let placedImages = []; 
+
+      function addImageToScene(index) {
+        if (index < images.length) {
+          logStatus("Loading image...");
+
+          const imageTexture = new THREE.TextureLoader().load(
+            images[index],
+            () => logStatus("Image loaded successfully."),
+            undefined,
+            () => logStatus("Error loading image.")
+          );
+
+          const imageGeometry = new THREE.PlaneGeometry(1, 1);
+          const imageMaterial = new THREE.MeshBasicMaterial({
+            map: imageTexture,
+            transparent: true,
+            side: THREE.DoubleSide,
+          });
+
+          const imageMesh = new THREE.Mesh(imageGeometry, imageMaterial);
+          imageMesh.visible = false; 
+          scene.add(imageMesh);
+          placedImages.push(imageMesh); 
+
+          logStatus("Image added to the scene.");
         } else {
-          location.reload();
+          logStatus("No more images to place.");
         }
-      });
-
-      if (navigator.xr) {
-        navigator.xr.isSessionSupported("immersive-ar").then((isSupported) => {
-          if (!isSupported) {
-            const btn = document.getElementById("ARButton");
-            btn.addEventListener("click", () => {
-              window.location.href = "/qr";
-            });
-          }
-        });
       }
-
-      init();
-      animate();
 
       function init() {
         const container = document.createElement("div");
         document.body.appendChild(container);
 
         scene = new THREE.Scene();
-
-        camera = new THREE.PerspectiveCamera(
-          70,
-          window.innerWidth / window.innerHeight,
-          0.01,
-          20
-        );
-
+        camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
         const directionalLight = new THREE.DirectionalLight(0xffffff, 2);
         directionalLight.position.set(5, 10, 5);
         scene.add(directionalLight);
@@ -134,12 +139,9 @@
         scene.add(controller);
 
         logStatus("AR Session Started");
-
         addReticleToScene();
-        addImageToScene();
 
         window.addEventListener("resize", onWindowResize);
-
         renderer.xr.addEventListener('sessionstart', initializeHitTestSource);
       }
 
@@ -157,91 +159,52 @@
         scene.add(reticle);
       }
 
-	 const images = [
-	 "./assets/Arts/ar1.jpg",
-	 "./assets/Arts/ar2.jpg",
-	 "./assets/Arts/ar3.jpg"
-	 ]; 
-	 let currentImageIndex = 0; 
-	 let placedImages = []; 
-	 
-	 function addImageToScene(index) {
-	 if (index < images.length) {
-		 logStatus("Loading image...");
-	 
-		 const imageTexture = new THREE.TextureLoader().load(
-		 images[index],
-		 () => logStatus("Image loaded successfully."),
-		 undefined,
-		 () => logStatus("Error loading image.")
-		 );
-	 
-		 const imageGeometry = new THREE.PlaneGeometry(1, 1);
-		 const imageMaterial = new THREE.MeshBasicMaterial({
-		 map: imageTexture,
-		 transparent: true,
-		 side: THREE.DoubleSide,
-		 });
-	 
-		 const imageMesh = new THREE.Mesh(imageGeometry, imageMaterial);
-		 imageMesh.visible = false; 
-		 scene.add(imageMesh);
-		 
-		 placedImages.push(imageMesh); 
-	 
-		 logStatus("Image added to the scene.");
-	 } else {
-		 logStatus("No more images to place.");
-	 }
-	 }
-	 
-	 function onSelect() {
-	 if (hitSomething && reticle.visible) {
-		 logStatus(`Placing image ${currentImageIndex + 1}.`);
-		 
-		 const currentImageMesh = placedImages[currentImageIndex]; // Reference the current image
-		 currentImageMesh.position.setFromMatrixPosition(reticle.matrix);
-		 
-		 const rotation = new THREE.Quaternion().setFromRotationMatrix(reticle.matrix);
-		 currentImageMesh.quaternion.copy(rotation);
-		 
-		 currentImageMesh.visible = true; 
-		 reticle.visible = false; 
-		 look_for_surface_icon.style.visibility = "hidden"; 
-	 
-		 currentImageIndex++; 
-		 if (currentImageIndex < images.length) {
-		 addImageToScene(currentImageIndex); 
-		 }
-	 } else {
-		 logStatus("No surface detected. Move your camera to scan a flat surface.");
-	 }
-	 }
-	 
-	 function removeImage(imageMesh) {
-	 scene.remove(imageMesh); 
-	 logStatus("Image removed.");
-	 }
-	 
-	 function checkForImageRemoval(event) {
-	 const raycaster = new THREE.Raycaster();
-	 const mouse = new THREE.Vector2();
-	 
-	 mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-	 mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-	 
-	 raycaster.setFromCamera(mouse, camera); 
-	 
-	 const intersects = raycaster.intersectObjects(placedImages); 
-	 
-	 if (intersects.length > 0) {
-		 removeImage(intersects[0].object); 
-	 }
-	 }
-	 
-	 addImageToScene(currentImageIndex);
-	 
-	 window.addEventListener('click', checkForImageRemoval);
+      function onSelect() {
+        if (hitSomething && reticle.visible) {
+          logStatus(`Placing image ${currentImageIndex + 1}.`);
+
+          const currentImageMesh = placedImages[currentImageIndex]; 
+          currentImageMesh.position.setFromMatrixPosition(reticle.matrix);
+          const rotation = new THREE.Quaternion().setFromRotationMatrix(reticle.matrix);
+          currentImageMesh.quaternion.copy(rotation);
+          
+          currentImageMesh.visible = true; 
+          reticle.visible = false; 
+          look_for_surface_icon.style.visibility = "hidden"; 
+
+          currentImageIndex++; 
+          if (currentImageIndex < images.length) {
+            addImageToScene(currentImageIndex); 
+          }
+        } else {
+          logStatus("No surface detected. Move your camera to scan a flat surface.");
+        }
+      }
+
+      function removeImage(imageMesh) {
+        scene.remove(imageMesh); 
+        logStatus("Image removed.");
+      }
+
+      function checkForImageRemoval(event) {
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        
+        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+        raycaster.setFromCamera(mouse, camera); 
+        
+        const intersects = raycaster.intersectObjects(placedImages); 
+        
+        if (intersects.length > 0) {
+          removeImage(intersects[0].object); 
+        }
+      }
+
+      window.addEventListener('click', checkForImageRemoval);
+      init();
+      addImageToScene(currentImageIndex);
 
       let hitTestSource = null;
       let localSpace = null;
@@ -267,12 +230,12 @@
         }
 
         session.addEventListener("end", () => {
-          isXRSessionStarted = false;
           hitTestSourceInitialized = false;
           hitTestSource = null;
-		  close_ar_button.style.visibility = "hidden";
+          close_ar_button.style.visibility = "hidden";
         });
-		close_ar_button.style.visibility = "visible";
+
+        close_ar_button.style.visibility = "visible";
         logStatus("Looking for a surface...");
       }
 
@@ -286,27 +249,28 @@
         renderer.setAnimationLoop(render);
       }
 
-	function render(timestamp, frame) {
-	if (frame && hitTestSourceInitialized) {
-		const hitTestResults = frame.getHitTestResults(hitTestSource);
-		if (hitTestResults.length > 0) {
-		hitSomething = true;
-		const hit = hitTestResults[0];
-		const pose = hit.getPose(localSpace);
-	
-		reticle.visible = true;
-		reticle.matrix.fromArray(pose.transform.matrix);
-		logStatus("Surface found. Tap to place the image.");
-		look_for_surface_icon.style.visibility = "hidden";  
-		} else {
-		hitSomething = false;
-		reticle.visible = true;
-		logStatus("Looking for a surface...");
-		look_for_surface_icon.style.visibility = "visible"; 
-		}
-	}
-	renderer.render(scene, camera);
-	}
+      function render(timestamp, frame) {
+        if (frame && hitTestSourceInitialized) {
+          const hitTestResults = frame.getHitTestResults(hitTestSource);
+          if (hitTestResults.length > 0) {
+            hitSomething = true;
+            const hit = hitTestResults[0];
+            const pose = hit.getPose(localSpace);
+            reticle.visible = true;
+            reticle.matrix.fromArray(pose.transform.matrix);
+            logStatus("Surface found. Tap to place the image.");
+            look_for_surface_icon.style.visibility = "hidden";  
+          } else {
+            hitSomething = false;
+            reticle.visible = true;
+            logStatus("Looking for a surface...");
+            look_for_surface_icon.style.visibility = "visible"; 
+          }
+        }
+        renderer.render(scene, camera);
+      }
+
+      animate(); 
     </script>
   </body>
 </html>

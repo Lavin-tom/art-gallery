@@ -95,6 +95,15 @@ u {
   transform: translate(-50%, 0);
   margin-bottom: 10%;
 }
+.AR-title {
+  width: 70vw;
+  height: 20vw;
+  margin: auto;
+  /*background-image: url("../assets/icons/Golam_logo.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;*/
+}
 .ar-exp {
   width: 100%;
   height: 5vw;
@@ -178,7 +187,7 @@ u {
     width: 25vw;
     height: 15vw;
   }
-  .movie-title {
+  .AR-title {
     width: 25vw;
     height: 7vw;
   }
