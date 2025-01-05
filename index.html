@@ -46,9 +46,9 @@
         </div>
         <div class="image"></div>
         <div class="steps2">
-          <p>Stand at the center of your living room with 4 feet of empty space.</p>
-          <p>Point the camera at a flat surface and scan it when prompted.</p>
-          <p>Enjoy your AR image!</p>
+			<p>Stand in the center of your room with at least 4 feet of clear space around you.</p>
+			<p>Point your camera at a flat surface and follow the on-screen instructions to scan it.</p>
+			<p>Once detected, enjoy placing the art right in your space!</p>
         </div>
       </div>
     </div>
@@ -80,7 +80,7 @@ const images = [
     "./assets/Arts/ar3.jpg"
 ];
 
-let currentImageIndex = 0; // Track the image to be placed
+let currentImageIndex = 0; 
 
 function init() {
     const container = document.createElement("div");
@@ -113,7 +113,7 @@ function init() {
     addReticleToScene();
     renderer.xr.addEventListener('sessionstart', () => {
         logStatus("AR Session Started");
-        addImageToScene(currentImageIndex); // Add the first image on AR session start.
+        addImageToScene(currentImageIndex); 
         initializeHitTestSource();
     });
 }
@@ -128,7 +128,7 @@ function addReticleToScene() {
     const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
     reticle = new THREE.Mesh(geometry, material);
     reticle.matrixAutoUpdate = false;
-    reticle.visible = false; // Initially, the reticle is hidden
+    reticle.visible = false;
     scene.add(reticle);
 }
 
@@ -147,7 +147,6 @@ function addImageToScene(index) {
                     side: THREE.DoubleSide,
                 });
 
-                // If there's already a placed image, remove it before adding the new one
                 if (imageMesh) {
                     scene.remove(imageMesh);
                 }
@@ -156,6 +155,8 @@ function addImageToScene(index) {
                 imageMesh.visible = false; 
                 scene.add(imageMesh);
                 logStatus("Image added to the scene.");
+
+                look_for_surface_icon.style.visibility = "hidden";
             },
             undefined,
             () => logStatus("Error loading image.")
@@ -165,7 +166,6 @@ function addImageToScene(index) {
     }
 }
 
-// Handling the select event (tap to place image)
 let isPlacing = false;
 
 function onSelect() {
@@ -177,20 +177,16 @@ function onSelect() {
         isPlacing = true;
 
         if (imageMesh && !imageMesh.visible) {
-            // Place the image at the reticle's position
+
             imageMesh.position.setFromMatrixPosition(reticle.matrix);
             const rotation = new THREE.Quaternion().setFromRotationMatrix(reticle.matrix);
             imageMesh.quaternion.copy(rotation);
-            imageMesh.visible = true; // Make the image visible once placed
+            imageMesh.visible = true;
 
-            // Hide the reticle and "Looking for a surface" icon once the image is placed
-            reticle.visible = false; 
-            look_for_surface_icon.style.visibility = "hidden"; 
+            reticle.visible = false;
 
-            // Show the log status message about image placement
             logStatus("Only one image can be added at a time. Tap the image to remove it, then tap anywhere to place it again.");
 
-            // Optionally, you can disable further placement or interaction until the user removes the image
             setTimeout(() => {
                 isPlacing = false;
             }, 500); 
@@ -202,30 +198,22 @@ function onSelect() {
     }
 }
 
-// Function to remove an image when clicked
 function removeImage(imageMesh) {
     if (imageMesh) {
         scene.remove(imageMesh);
         logStatus("Image removed.");
 
-        // Reset imageMesh to null so the user can add a new one
         imageMesh = null;
 
-        // Show the log status message again
         logStatus("Only one image can be added at a time. Tap anywhere to place a new image.");
 
-        // Show the reticle and the "Looking for a surface" icon again
         reticle.visible = true;
-        look_for_surface_icon.style.visibility = "visible";  // Ensure the icon for finding surfaces is visible.
-
-        // Optionally reset currentImageIndex to 0
-        currentImageIndex = 0; 
+        look_for_surface_icon.style.visibility = "visible";  
     } else {
         logStatus("No image mesh to remove.");
     }
 }
 
-// Function to check if the user clicked on an existing image for removal
 function checkForImageRemoval(event) {
     if (!hitSomething || !reticle.visible) {
         return; 
@@ -238,12 +226,12 @@ function checkForImageRemoval(event) {
 
     raycaster.setFromCamera(mouse, camera); 
     
-    const intersects = raycaster.intersectObject(imageMesh); // Only check for the one image in the scene.
+    const intersects = raycaster.intersectObject(imageMesh); 
     
     if (intersects.length > 0) {
         removeImage(imageMesh);
 
-        addImageToScene(currentImageIndex);  // Add the first image again or next image if required.
+        addImageToScene(currentImageIndex);  
     }
 }
 
@@ -301,7 +289,6 @@ function render(timestamp, frame) {
             const hit = hitTestResults[0];
             const pose = hit.getPose(localSpace);
 
-            // Only show the reticle if there is no image placed
             if (!imageMesh || !imageMesh.visible) {
                 reticle.visible = true;
                 reticle.matrix.fromArray(pose.transform.matrix);
@@ -310,7 +297,7 @@ function render(timestamp, frame) {
             }
         } else {
             hitSomething = false;
-            reticle.visible = false; // Hide reticle when no surface is found
+            reticle.visible = false; 
             look_for_surface_icon.style.visibility = "visible"; 
             logStatus("Looking for a surface...");
         }
@@ -318,7 +305,7 @@ function render(timestamp, frame) {
     renderer.render(scene, camera);
 }
 
-renderer.setAnimationLoop(render);
+animate(); 
 
 </script>
 
