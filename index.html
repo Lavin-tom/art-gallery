@@ -128,7 +128,7 @@ function addReticleToScene() {
     const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
     reticle = new THREE.Mesh(geometry, material);
     reticle.matrixAutoUpdate = false;
-    reticle.visible = false;
+    reticle.visible = false; 
     scene.add(reticle);
 }
 
@@ -166,6 +166,7 @@ function addImageToScene(index) {
     }
 }
 
+// Handling the select event (tap to place image)
 let isPlacing = false;
 
 function onSelect() {
@@ -198,6 +199,7 @@ function onSelect() {
     }
 }
 
+// Function to remove an image when clicked
 function removeImage(imageMesh) {
     if (imageMesh) {
         scene.remove(imageMesh);
@@ -214,6 +216,7 @@ function removeImage(imageMesh) {
     }
 }
 
+// Function to check if the user clicked on an existing image for removal
 function checkForImageRemoval(event) {
     if (!hitSomething || !reticle.visible) {
         return; 
@@ -288,17 +291,14 @@ function render(timestamp, frame) {
             hitSomething = true;
             const hit = hitTestResults[0];
             const pose = hit.getPose(localSpace);
-
-            if (!imageMesh || !imageMesh.visible) {
-                reticle.visible = true;
-                reticle.matrix.fromArray(pose.transform.matrix);
-                logStatus("Surface found. Tap to place the image.");
-                look_for_surface_icon.style.visibility = "hidden"; 
-            }
+            reticle.visible = true;
+            reticle.matrix.fromArray(pose.transform.matrix);
+            logStatus("Surface found. Tap to place the image.");
+            look_for_surface_icon.style.visibility = "hidden";  
         } else {
             hitSomething = false;
-            reticle.visible = false; 
-            look_for_surface_icon.style.visibility = "visible"; 
+            reticle.visible = false;
+            look_for_surface_icon.style.visibility = "visible";  
             logStatus("Looking for a surface...");
         }
     }
