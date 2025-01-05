@@ -128,7 +128,7 @@ function addReticleToScene() {
     const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
     reticle = new THREE.Mesh(geometry, material);
     reticle.matrixAutoUpdate = false;
-    reticle.visible = false; 
+    reticle.visible = false; // Initially, the reticle is hidden
     scene.add(reticle);
 }
 
@@ -183,6 +183,7 @@ function onSelect() {
             imageMesh.quaternion.copy(rotation);
             imageMesh.visible = true; // Make the image visible once placed
 
+            // Hide the reticle and "Looking for a surface" icon once the image is placed
             reticle.visible = false; 
             look_for_surface_icon.style.visibility = "hidden"; 
 
@@ -213,7 +214,7 @@ function removeImage(imageMesh) {
         // Show the log status message again
         logStatus("Only one image can be added at a time. Tap anywhere to place a new image.");
 
-        // Show the reticle again (for placing a new image)
+        // Show the reticle and the "Looking for a surface" icon again
         reticle.visible = true;
         look_for_surface_icon.style.visibility = "visible";  // Ensure the icon for finding surfaces is visible.
 
@@ -242,7 +243,6 @@ function checkForImageRemoval(event) {
     if (intersects.length > 0) {
         removeImage(imageMesh);
 
-        // Re-add the image (since the previous one was removed, we can place a new image now)
         addImageToScene(currentImageIndex);  // Add the first image again or next image if required.
     }
 }
@@ -300,13 +300,17 @@ function render(timestamp, frame) {
             hitSomething = true;
             const hit = hitTestResults[0];
             const pose = hit.getPose(localSpace);
-            reticle.visible = true;
-            reticle.matrix.fromArray(pose.transform.matrix);
-            logStatus("Surface found. Tap to place the image.");
-            look_for_surface_icon.style.visibility = "hidden"; 
+
+            // Only show the reticle if there is no image placed
+            if (!imageMesh || !imageMesh.visible) {
+                reticle.visible = true;
+                reticle.matrix.fromArray(pose.transform.matrix);
+                logStatus("Surface found. Tap to place the image.");
+                look_for_surface_icon.style.visibility = "hidden"; 
+            }
         } else {
             hitSomething = false;
-            reticle.visible = false; 
+            reticle.visible = false; // Hide reticle when no surface is found
             look_for_surface_icon.style.visibility = "visible"; 
             logStatus("Looking for a surface...");
         }
