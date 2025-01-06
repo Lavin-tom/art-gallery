@@ -165,14 +165,16 @@ function addImageToScene(index) {
     }
 }
 
+let imagePlaced = false; 
+
 function onSelect() {
     if (hitSomething && reticle.visible) {
-        if (isPlacing) {
-            logStatus("Already placing an image.");
+        if (imagePlaced) { 
+            logStatus("Only one image can be placed on the surface.");
             return;
         }
-        isPlacing = true;
 
+        // Proceed with placing the image
         const currentImageMesh = placedImages[currentImageIndex]; 
         if (currentImageMesh && !currentImageMesh.visible) {
             currentImageMesh.position.setFromMatrixPosition(reticle.matrix);
@@ -183,6 +185,7 @@ function onSelect() {
             reticle.visible = false; 
             look_for_surface_icon.style.visibility = "hidden"; 
 
+            imagePlaced = true; 
             currentImageIndex++; 
             if (currentImageIndex < images.length) {
                 addImageToScene(currentImageIndex); 
@@ -192,10 +195,6 @@ function onSelect() {
         } else {
             logStatus("Image already placed or no current image mesh to place.");
         }
-
-        setTimeout(() => {
-            isPlacing = false; 
-        }, 500); 
     } else {
         logStatus("No surface detected or reticle not visible.");
     }
@@ -292,24 +291,27 @@ function removeImage(imageMesh) {
   }
 
 function render(timestamp, frame) {
-  if (frame && hitTestSourceInitialized) {
-    const hitTestResults = frame.getHitTestResults(hitTestSource);
-    if (hitTestResults.length > 0) {
-      hitSomething = true;
-      const hit = hitTestResults[0];
-      const pose = hit.getPose(localSpace);
-      reticle.visible = true;
-      reticle.matrix.fromArray(pose.transform.matrix);
-      logStatus("Surface found. Tap to place the image.");
-      look_for_surface_icon.style.visibility = "hidden"; 
-    } else {
-      hitSomething = false;
-      reticle.visible = false; 
-      look_for_surface_icon.style.visibility = "visible"; 
-      logStatus("Looking for a surface...");
+    if (frame && hitTestSourceInitialized) {
+        const hitTestResults = frame.getHitTestResults(hitTestSource);
+        if (hitTestResults.length > 0) {
+            hitSomething = true;
+            const hit = hitTestResults[0];
+            const pose = hit.getPose(localSpace);
+
+            if (!imagePlaced) { 
+                reticle.visible = true;
+                reticle.matrix.fromArray(pose.transform.matrix);
+                logStatus("Surface found. Tap to place the image.");
+                look_for_surface_icon.style.visibility = "hidden"; 
+            }
+        } else {
+            hitSomething = false;
+            reticle.visible = false; 
+            look_for_surface_icon.style.visibility = "visible"; 
+            logStatus("Looking for a surface...");
+        }
     }
-  }
-  renderer.render(scene, camera);
+    renderer.render(scene, camera);
 }
 
   animate(); 
