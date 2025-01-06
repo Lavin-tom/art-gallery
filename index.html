@@ -115,7 +115,7 @@
     addReticleToScene();
     renderer.xr.addEventListener('sessionstart', () => {
         logStatus("AR Session Started");
-        addImageToScene(currentImageIndex); // Ensure the first image is added
+        addImageToScene(currentImageIndex); 
         initializeHitTestSource();
     });
   }
@@ -203,36 +203,37 @@ function onSelect() {
 // Function to remove an image when clicked
 function removeImage(imageMesh) {
     if (imageMesh) {
-        scene.remove(imageMesh); 
+        scene.remove(imageMesh);
+        imageMesh.geometry.dispose();
+        imageMesh.material.dispose();
         logStatus("Image removed.");
+        renderer.renderLists.dispose(); 
     } else {
         logStatus("No image mesh to remove.");
     }
 }
 
 // Function to check if the user clicked on an existing image for removal
-  function checkForImageRemoval(event) {
-      if (!hitSomething || !reticle.visible) {
-        return; 
-    }
+function checkForImageRemoval(event) {
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
     
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
-    raycaster.setFromCamera(mouse, camera); 
-    
-    const intersects = raycaster.intersectObjects(placedImages); 
-    
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(placedImages);
+
     if (intersects.length > 0) {
-      const imageToRemove = intersects[0].object; 
-      removeImage(imageToRemove);
-      
-      placedImages = placedImages.filter(img => img !== imageToRemove);
-      currentImageIndex = placedImages.length; 
+        const imageToRemove = intersects[0].object;
+        removeImage(imageToRemove);
+
+        placedImages = placedImages.filter(img => img !== imageToRemove);
+        imagePlaced = false; // Reset placement state
+        logStatus("Image removed. Ready to place a new one.");
+        look_for_surface_icon.style.visibility = "visible"; 
     }
-  }
+}
 
   close_ar_button.addEventListener("click", () => {
     const session = renderer.xr.getSession();
@@ -298,7 +299,7 @@ function render(timestamp, frame) {
             const hit = hitTestResults[0];
             const pose = hit.getPose(localSpace);
 
-            if (!imagePlaced) { 
+            if (!imagePlaced) {
                 reticle.visible = true;
                 reticle.matrix.fromArray(pose.transform.matrix);
                 logStatus("Surface found. Tap to place the image.");
@@ -306,7 +307,7 @@ function render(timestamp, frame) {
             }
         } else {
             hitSomething = false;
-            reticle.visible = false; 
+            reticle.visible = false;
             look_for_surface_icon.style.visibility = "visible"; 
             logStatus("Looking for a surface...");
         }
@@ -314,6 +315,13 @@ function render(timestamp, frame) {
     renderer.render(scene, camera);
 }
 
+// Reset visibility and state after removal
+function resetAfterRemoval() {
+    look_for_surface_icon.style.visibility = "visible";
+    imagePlaced = false;
+    currentImageIndex = Math.max(0, placedImages.length); 
+    logStatus("Ready to place a new image.");
+}
   animate(); 
 </script>
 
