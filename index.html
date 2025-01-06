@@ -64,25 +64,27 @@
   import * as THREE from "three";
   import { ARButton } from "three/addons/webxr/ARButton.js";
 
-let camera, scene, renderer;
-let controller;
-let reticle = null;
-let hitSomething = false;
-let imageMesh = null;
+  let camera, scene, renderer;
+  let controller;
+  let reticle = null;
+  let hitSomething = false;
+  let imageMesh = null;
 
-const look_for_surface_icon = document.getElementById("look_for_surface_icon");
-const logContainer = document.getElementById("log-container");
-const close_ar_button = document.getElementById("close_ar_button");
+  const look_for_surface_icon = document.getElementById("look_for_surface_icon");
+  const logContainer = document.getElementById("log-container");
+  const close_ar_button = document.getElementById("close_ar_button");
 
-const images = [
+  const images = [
     "./assets/Arts/ar1.jpg",
     "./assets/Arts/ar2.jpg",
     "./assets/Arts/ar3.jpg"
-];
+  ];
+  let currentImageIndex = 0; 
+  let placedImages = []; 
 
-let currentImageIndex = 0; 
 
-function init() {
+
+  function init() {
     const container = document.createElement("div");
     document.body.appendChild(container);
 
@@ -99,11 +101,11 @@ function init() {
     container.appendChild(renderer.domElement);
 
     document.getElementById("middle-part").appendChild(
-        ARButton.createButton(renderer, {
-            requiredFeatures: ["local", "hit-test"],
-            optionalFeatures: ["dom-overlay"],
-            domOverlay: { root: document.getElementById("overlay") },
-        })
+      ARButton.createButton(renderer, {
+        requiredFeatures: ["local", "hit-test"],
+        optionalFeatures: ["dom-overlay"],
+        domOverlay: { root: document.getElementById("overlay") },
+      })
     );
 
     controller = renderer.xr.getController(0);
@@ -113,24 +115,26 @@ function init() {
     addReticleToScene();
     renderer.xr.addEventListener('sessionstart', () => {
         logStatus("AR Session Started");
-        addImageToScene(currentImageIndex); 
+        addImageToScene(currentImageIndex); // Ensure the first image is added
         initializeHitTestSource();
     });
-}
+  }
 
-function logStatus(message) {
+  function logStatus(message) {
     logContainer.textContent = message;
     console.log(message);
-}
+  }
 
-function addReticleToScene() {
+  function addReticleToScene() {
     const geometry = new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2);
     const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
     reticle = new THREE.Mesh(geometry, material);
     reticle.matrixAutoUpdate = false;
     reticle.visible = false; 
     scene.add(reticle);
-}
+  }
+
+let isPlacing = false;
 
 function addImageToScene(index) {
     if (index < images.length) {
@@ -147,16 +151,11 @@ function addImageToScene(index) {
                     side: THREE.DoubleSide,
                 });
 
-                if (imageMesh) {
-                    scene.remove(imageMesh);
-                }
-
-                imageMesh = new THREE.Mesh(imageGeometry, imageMaterial);
+                const imageMesh = new THREE.Mesh(imageGeometry, imageMaterial);
                 imageMesh.visible = false; 
                 scene.add(imageMesh);
+                placedImages.push(imageMesh);
                 logStatus("Image added to the scene.");
-
-                look_for_surface_icon.style.visibility = "hidden";
             },
             undefined,
             () => logStatus("Error loading image.")
@@ -166,9 +165,6 @@ function addImageToScene(index) {
     }
 }
 
-// Handling the select event (tap to place image)
-let isPlacing = false;
-
 function onSelect() {
     if (hitSomething && reticle.visible) {
         if (isPlacing) {
@@ -177,23 +173,29 @@ function onSelect() {
         }
         isPlacing = true;
 
-        if (imageMesh && !imageMesh.visible) {
-
-            imageMesh.position.setFromMatrixPosition(reticle.matrix);
+        const currentImageMesh = placedImages[currentImageIndex]; 
+        if (currentImageMesh && !currentImageMesh.visible) {
+            currentImageMesh.position.setFromMatrixPosition(reticle.matrix);
             const rotation = new THREE.Quaternion().setFromRotationMatrix(reticle.matrix);
-            imageMesh.quaternion.copy(rotation);
-            imageMesh.visible = true;
+            currentImageMesh.quaternion.copy(rotation);
+            currentImageMesh.visible = true; 
+            
+            reticle.visible = false; 
+            look_for_surface_icon.style.visibility = "hidden"; 
 
-            reticle.visible = false;
-
-            logStatus("Only one image can be added at a time. Tap the image to remove it, then tap anywhere to place it again.");
-
-            setTimeout(() => {
-                isPlacing = false;
-            }, 500); 
+            currentImageIndex++; 
+            if (currentImageIndex < images.length) {
+                addImageToScene(currentImageIndex); 
+            } else {
+                logStatus("All images placed.");
+            }
         } else {
             logStatus("Image already placed or no current image mesh to place.");
         }
+
+        setTimeout(() => {
+            isPlacing = false; 
+        }, 500); 
     } else {
         logStatus("No surface detected or reticle not visible.");
     }
@@ -202,23 +204,16 @@ function onSelect() {
 // Function to remove an image when clicked
 function removeImage(imageMesh) {
     if (imageMesh) {
-        scene.remove(imageMesh);
+        scene.remove(imageMesh); 
         logStatus("Image removed.");
-
-        imageMesh = null;
-
-        logStatus("Only one image can be added at a time. Tap anywhere to place a new image.");
-
-        reticle.visible = true;
-        look_for_surface_icon.style.visibility = "visible";  
     } else {
         logStatus("No image mesh to remove.");
     }
 }
 
 // Function to check if the user clicked on an existing image for removal
-function checkForImageRemoval(event) {
-    if (!hitSomething || !reticle.visible) {
+  function checkForImageRemoval(event) {
+      if (!hitSomething || !reticle.visible) {
         return; 
     }
     const raycaster = new THREE.Raycaster();
@@ -229,83 +224,95 @@ function checkForImageRemoval(event) {
 
     raycaster.setFromCamera(mouse, camera); 
     
-    const intersects = raycaster.intersectObject(imageMesh); 
+    const intersects = raycaster.intersectObjects(placedImages); 
     
     if (intersects.length > 0) {
-        removeImage(imageMesh);
-
-        addImageToScene(currentImageIndex);  
+      const imageToRemove = intersects[0].object; 
+      removeImage(imageToRemove);
+      
+      placedImages = placedImages.filter(img => img !== imageToRemove);
+      currentImageIndex = placedImages.length; 
     }
-}
+  }
 
-close_ar_button.addEventListener("click", () => {
+  close_ar_button.addEventListener("click", () => {
     const session = renderer.xr.getSession();
     if (session) {
-        session.end(); 
+      session.end(); 
     } else {
-        location.reload(); 
+      location.reload(); 
     }
-});
+  });
 
-window.addEventListener('click', checkForImageRemoval);
-init(); 
-addImageToScene(currentImageIndex); 
+  window.addEventListener('click', checkForImageRemoval);
+  init();
+  addImageToScene(currentImageIndex); 
 
-let hitTestSource = null;
-let localSpace = null;
-let hitTestSourceInitialized = false;
+  let hitTestSource = null;
+  let localSpace = null;
+  let hitTestSourceInitialized = false;
 
-async function initializeHitTestSource() {
+  async function initializeHitTestSource() {
     const session = renderer.xr.getSession();
     if (!session) {
-        logStatus("Failed to start AR session.");
-        return;
+      logStatus("Failed to start AR session.");
+      return;
     }
 
     const viewerSpace = await session.requestReferenceSpace("viewer");
     localSpace = await session.requestReferenceSpace("local");
 
     try {
-        hitTestSource = await session.requestHitTestSource({ space: viewerSpace });
-        hitTestSourceInitialized = true;
-        logStatus("Hit test source initialized successfully.");
+      hitTestSource = await session.requestHitTestSource({ space: viewerSpace });
+      hitTestSourceInitialized = true;
+      logStatus("Hit test source initialized successfully.");
     } catch (error) {
-        logStatus("Failed to initialize hit test source.");
-        console.error(error);
+      logStatus("Failed to initialize hit test source.");
+      console.error(error);
     }
 
     session.addEventListener("end", () => {
-        hitTestSourceInitialized = false;
-        hitTestSource = null;
-        close_ar_button.style.visibility = "hidden";
+      hitTestSourceInitialized = false;
+      hitTestSource = null;
+      close_ar_button.style.visibility = "hidden";
     });
 
     close_ar_button.style.visibility = "visible";
     logStatus("Looking for a surface...");
-}
+  }
+
+  function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+
+  function animate() {
+    renderer.setAnimationLoop(render);
+  }
 
 function render(timestamp, frame) {
-    if (frame && hitTestSourceInitialized) {
-        const hitTestResults = frame.getHitTestResults(hitTestSource);
-        if (hitTestResults.length > 0) {
-            hitSomething = true;
-            const hit = hitTestResults[0];
-            const pose = hit.getPose(localSpace);
-            reticle.visible = true;
-            reticle.matrix.fromArray(pose.transform.matrix);
-            logStatus("Surface found. Tap to place the image.");
-            look_for_surface_icon.style.visibility = "hidden";  
-        } else {
-            hitSomething = false;
-            reticle.visible = false;
-            look_for_surface_icon.style.visibility = "visible";  
-            logStatus("Looking for a surface...");
-        }
+  if (frame && hitTestSourceInitialized) {
+    const hitTestResults = frame.getHitTestResults(hitTestSource);
+    if (hitTestResults.length > 0) {
+      hitSomething = true;
+      const hit = hitTestResults[0];
+      const pose = hit.getPose(localSpace);
+      reticle.visible = true;
+      reticle.matrix.fromArray(pose.transform.matrix);
+      logStatus("Surface found. Tap to place the image.");
+      look_for_surface_icon.style.visibility = "hidden"; 
+    } else {
+      hitSomething = false;
+      reticle.visible = false; 
+      look_for_surface_icon.style.visibility = "visible"; 
+      logStatus("Looking for a surface...");
     }
-    renderer.render(scene, camera);
+  }
+  renderer.render(scene, camera);
 }
-animate(); 
 
+  animate(); 
 </script>
 
   </body>
