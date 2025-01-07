@@ -113,11 +113,12 @@
     scene.add(controller);
 
     addReticleToScene();
-    renderer.xr.addEventListener('sessionstart', () => {
-        logStatus("AR Session Started");
-        addImageToScene(currentImageIndex); 
-        initializeHitTestSource();
-    });
+	renderer.xr.addEventListener("sessionstart", () => {
+		logStatus("AR Session Started");
+		look_for_surface_icon.style.visibility = "visible";
+		addImageToScene(currentImageIndex); 
+		initializeHitTestSource();
+	});
   }
 
   function logStatus(message) {
@@ -169,37 +170,33 @@ let imagePlaced = false;
 
 function onSelect() {
     if (hitSomething && reticle.visible) {
-        if (imagePlaced) { 
-            logStatus("Only one image can be placed on the surface.");
-            return;
-        }
+        if (!imagePlaced && currentImageIndex < images.length) {
+            const currentImageMesh = placedImages[currentImageIndex];
+            if (currentImageMesh) {
+                currentImageMesh.position.setFromMatrixPosition(reticle.matrix);
+                currentImageMesh.quaternion.setFromRotationMatrix(reticle.matrix);
+                currentImageMesh.visible = true;
 
-        // Proceed with placing the image
-        const currentImageMesh = placedImages[currentImageIndex]; 
-        if (currentImageMesh && !currentImageMesh.visible) {
-            currentImageMesh.position.setFromMatrixPosition(reticle.matrix);
-            const rotation = new THREE.Quaternion().setFromRotationMatrix(reticle.matrix);
-            currentImageMesh.quaternion.copy(rotation);
-            currentImageMesh.visible = true; 
-            
-            reticle.visible = false; 
-            look_for_surface_icon.style.visibility = "hidden"; 
-
-            imagePlaced = true; 
-            currentImageIndex++; 
-            if (currentImageIndex < images.length) {
-                addImageToScene(currentImageIndex); 
-            } else {
-                logStatus("All images placed.");
+                imagePlaced = true;
+                reticle.visible = false; 
+                look_for_surface_icon.style.visibility = "hidden"; 
+                logStatus("Image placed successfully.");
             }
         } else {
-            logStatus("Image already placed or no current image mesh to place.");
+            logStatus("No more images to place or an image is already placed.");
         }
     } else {
         logStatus("No surface detected or reticle not visible.");
     }
 }
 
+// Reset after removal
+function resetAfterRemoval() {
+    look_for_surface_icon.style.visibility = "visible"; 
+    imagePlaced = false; 
+    currentImageIndex = Math.max(0, placedImages.length); 
+    logStatus("Image removed. Ready to place a new one.");
+}
 // Function to remove an image when clicked
 function removeImage(imageMesh) {
     if (imageMesh) {
@@ -217,7 +214,7 @@ function removeImage(imageMesh) {
 function checkForImageRemoval(event) {
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
-    
+
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
@@ -229,9 +226,7 @@ function checkForImageRemoval(event) {
         removeImage(imageToRemove);
 
         placedImages = placedImages.filter(img => img !== imageToRemove);
-        imagePlaced = false; // Reset placement state
-        logStatus("Image removed. Ready to place a new one.");
-        look_for_surface_icon.style.visibility = "visible"; 
+        resetAfterRemoval(); 
     }
 }
 
@@ -308,7 +303,9 @@ function render(timestamp, frame) {
         } else {
             hitSomething = false;
             reticle.visible = false;
-            look_for_surface_icon.style.visibility = "visible"; 
+            if (!imagePlaced) { 
+                look_for_surface_icon.style.visibility = "visible";
+            }
             logStatus("Looking for a surface...");
         }
     }
