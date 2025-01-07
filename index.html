@@ -82,8 +82,6 @@
   let currentImageIndex = 0; 
   let placedImages = []; 
 
-
-
   function init() {
     const container = document.createElement("div");
     document.body.appendChild(container);
@@ -120,7 +118,7 @@
 		initializeHitTestSource();
 	});
   }
-
+	
   function logStatus(message) {
     logContainer.textContent = message;
     console.log(message);
@@ -169,22 +167,26 @@ function addImageToScene(index) {
 let imagePlaced = false; 
 
 function onSelect() {
-    if (hitSomething && reticle.visible && currentImageIndex < images.length) {
-        const currentImageMesh = placedImages[currentImageIndex];
-        if (currentImageMesh) {
-            currentImageMesh.position.setFromMatrixPosition(reticle.matrix);
-            currentImageMesh.quaternion.setFromRotationMatrix(reticle.matrix);
-            currentImageMesh.visible = true;
+    if (hitSomething && reticle.visible) {
+        if (!imagePlaced && currentImageIndex < images.length) {
+            const currentImageMesh = placedImages[currentImageIndex];
+            if (currentImageMesh) {
+                currentImageMesh.position.setFromMatrixPosition(reticle.matrix);
+                currentImageMesh.quaternion.setFromRotationMatrix(reticle.matrix);
+                currentImageMesh.visible = true;
 
-            imagePlaced = true;
-            reticle.visible = false;
-            look_for_surface_icon.style.visibility = "hidden";
-            logStatus("Image placed successfully.");
+                imagePlaced = true; 
+                reticle.visible = false; 
+                look_for_surface_icon.style.visibility = "hidden"; 
+                logStatus("Image placed successfully.");
+            }
+        } else if (imagePlaced) {
+            logStatus("An image is already placed. Remove it to place a new one.");
         } else {
-            logStatus("Error: No image mesh found for the current index.");
+            logStatus("No more images to place.");
         }
     } else {
-        logStatus("Surface not detected or image already placed.");
+        logStatus("No surface detected or reticle not visible.");
     }
 }
 
@@ -192,19 +194,19 @@ function onSelect() {
 function resetAfterRemoval() {
     look_for_surface_icon.style.visibility = "visible"; 
     imagePlaced = false; 
-    currentImageIndex = Math.max(0, placedImages.length); 
+    reticle.visible = true; 
     logStatus("Image removed. Ready to place a new one.");
 }
 // Function to remove an image when clicked
 function removeImage(imageMesh) {
     if (imageMesh) {
-        scene.remove(imageMesh);
-        imageMesh.geometry.dispose();
-        imageMesh.material.dispose();
-        logStatus("Image removed.");
-        renderer.renderLists.dispose(); 
+        scene.remove(imageMesh); 
+        imageMesh.geometry.dispose(); 
+        imageMesh.material.dispose(); 
+        renderer.renderLists.dispose();
+        logStatus("Image removed successfully.");
     } else {
-        logStatus("No image mesh to remove.");
+        logStatus("No image found to remove.");
     }
 }
 
@@ -222,9 +224,10 @@ function checkForImageRemoval(event) {
     if (intersects.length > 0) {
         const imageToRemove = intersects[0].object;
         removeImage(imageToRemove);
-
-        placedImages = placedImages.filter(img => img !== imageToRemove);
+        placedImages = placedImages.filter(img => img !== imageToRemove); 
         resetAfterRemoval(); 
+    } else {
+        logStatus("No image selected for removal.");
     }
 }
 
