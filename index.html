@@ -115,7 +115,7 @@
     addReticleToScene();
 	renderer.xr.addEventListener("sessionstart", () => {
 		logStatus("AR Session Started");
-		//look_for_surface_icon.style.visibility = "visible";
+		look_for_surface_icon.style.visibility = "visible";
 		addImageToScene(currentImageIndex); 
 		initializeHitTestSource();
 	});
@@ -311,16 +311,8 @@ function render(timestamp, frame) {
     }
     renderer.render(scene, camera);
 }
-
-// Reset visibility and state after removal
-function resetAfterRemoval() {
-    look_for_surface_icon.style.visibility = "visible";
-    imagePlaced = false;
-    currentImageIndex = Math.max(0, placedImages.length); 
-    logStatus("Ready to place a new image.");
-}
   animate(); 
 </script>
-
+	  
   </body>
 </html>
