@@ -169,24 +169,22 @@ function addImageToScene(index) {
 let imagePlaced = false; 
 
 function onSelect() {
-    if (hitSomething && reticle.visible) {
-        if (!imagePlaced && currentImageIndex < images.length) {
-            const currentImageMesh = placedImages[currentImageIndex];
-            if (currentImageMesh) {
-                currentImageMesh.position.setFromMatrixPosition(reticle.matrix);
-                currentImageMesh.quaternion.setFromRotationMatrix(reticle.matrix);
-                currentImageMesh.visible = true;
+    if (hitSomething && reticle.visible && currentImageIndex < images.length) {
+        const currentImageMesh = placedImages[currentImageIndex];
+        if (currentImageMesh) {
+            currentImageMesh.position.setFromMatrixPosition(reticle.matrix);
+            currentImageMesh.quaternion.setFromRotationMatrix(reticle.matrix);
+            currentImageMesh.visible = true;
 
-                imagePlaced = true;
-                reticle.visible = false; 
-                look_for_surface_icon.style.visibility = "hidden"; 
-                logStatus("Image placed successfully.");
-            }
+            imagePlaced = true;
+            reticle.visible = false;
+            look_for_surface_icon.style.visibility = "hidden";
+            logStatus("Image placed successfully.");
         } else {
-            logStatus("No more images to place or an image is already placed.");
+            logStatus("Error: No image mesh found for the current index.");
         }
     } else {
-        logStatus("No surface detected or reticle not visible.");
+        logStatus("Surface not detected or image already placed.");
     }
 }
 
@@ -313,6 +311,6 @@ function render(timestamp, frame) {
 }
   animate(); 
 </script>
-	  
+
   </body>
 </html>
